@@ -709,7 +709,8 @@ $stats = $statsResult ?: ['total_jobs' => 0, 'active_jobs' => 0, 'total_applicat
                 <div class="panel-body-compact">
                     <a href="for-you.php" class="btn btn-white btn-small btn-block mb-1"><i class="fas fa-star"></i> Recommendations</a>
                     <a href="messages.php" class="btn btn-white btn-small btn-block mb-1"><i class="fas fa-envelope"></i> Messages</a>
-                    <a href="notifications.php" class="btn btn-white btn-small btn-block"><i class="fas fa-bell"></i> Notifications</a>
+                    <a href="notifications.php" class="btn btn-white btn-small btn-block mb-1"><i class="fas fa-bell"></i> Notifications</a>
+                    <a href="notification-settings.php" class="btn btn-white btn-small btn-block"><i class="fas fa-cog"></i> Notification Settings</a>
                 </div>
             </div>
         </div>

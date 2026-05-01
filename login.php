@@ -14,9 +14,18 @@ if (!empty($_SESSION['flash_success'])) {
     unset($_SESSION['flash_success']);
 }
 
-// If already logged in, redirect to appropriate dashboard
+// If already logged in, redirect to appropriate dashboard or onboarding
 if (isLoggedIn()) {
     $userType = getCurrentUserType();
+    $conn = getDBConnection();
+    $user = fetchOne($conn, "SELECT onboarding_completed FROM users WHERE user_id = ?", [getCurrentUserId()], 'i');
+    closeDBConnection($conn);
+    
+    // Redirect to onboarding if not completed (for workers and employers)
+    if ($user && !$user['onboarding_completed'] && in_array($userType, ['worker', 'employer'])) {
+        redirect('onboarding.php');
+    }
+    
     if ($userType == 'worker') {
         redirect('dashboard-worker.php');
     } elseif ($userType == 'employer') {
@@ -66,6 +75,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $updateSql = "UPDATE users SET last_login = NOW() WHERE user_id = ?";
                     executeQuery($conn, $updateSql, [$user['user_id']], 'i');
                     
+                    // Check if onboarding is completed
+                    if (!$user['onboarding_completed'] && in_array($user['user_type'], ['worker', 'employer'])) {
+                        closeDBConnection($conn);
+                        redirect('onboarding.php');
+                    }
+                    
+                    closeDBConnection($conn);
                     if ($user['user_type'] == 'worker') {
                         redirect('dashboard-worker.php');
                     } elseif ($user['user_type'] == 'employer') {

@@ -301,57 +301,88 @@ CREATE INDEX idx_user_skill_match ON user_skills(user_id, skill_name, proficienc
 
 ### 1. Onboarding Flow Enhancement
 **Priority:** High  
-**Impact:** Improves user activation
+**Status:** ✅ **COMPLETED** (May 2026)
 
-**Recommendation:**
-- Add guided onboarding for new users
-- Implement step-by-step profile completion
-- Add skill suggestions during onboarding
-- Create interactive tutorials
-- Add progress indicators
+**Implementation:**
+- Created `onboarding.php` with 4-step guided wizard
+- Step 1: Profile photo and bio
+- Step 2: Skills (workers) or Company info (employers)
+- Step 3: Notification preferences
+- Step 4: Welcome/Completion
+- Progress indicator with visual step completion
+- Auto-redirects new users after signup/login
+- Skip option available for users who want to bypass
+
+**New Database Columns:**
+- `users.onboarding_completed` - BOOLEAN
+- `users.onboarding_completed_at` - TIMESTAMP
 
 ### 2. Responsive Design Improvements
 **Priority:** Medium  
-**Impact:** Improves mobile experience
+**Status:** ✅ **COMPLETED** (May 2026)
 
-**Recommendation:**
-- Test and optimize for various screen sizes
-- Add mobile-specific navigation (bottom nav bar)
-- Implement touch-friendly UI elements
-- Add swipe gestures for common actions
-- Optimize form inputs for mobile
+**Implementation:**
+- Added mobile hamburger menu toggle for navigation
+- Created mobile bottom navigation bar (visible < 768px)
+- Quick access icons: Home, Explore, Jobs/Post, Messages, Profile
+- Optimized form inputs for mobile (min-height: 40px, font-size: 16px)
+- Touch-friendly buttons and interactive elements
+- Responsive data tables with card layout on mobile
+- CSS updates for various screen sizes (640px, 768px, 960px, 992px breakpoints)
 
 ### 3. Accessibility Improvements
 **Priority:** Medium  
-**Impact:** Improves inclusivity
+**Status:** ✅ **COMPLETED** (May 2026)
 
-**Recommendation:**
-- Add ARIA labels throughout
-- Implement keyboard navigation
-- Add screen reader support
-- Ensure color contrast compliance (WCAG AA)
-- Add alt text for all images
+**Implementation:**
+- Added "Skip to content" link for keyboard navigation
+- Implemented ARIA labels throughout navigation (`role="navigation"`, `aria-label`)
+- Added `aria-expanded` for mobile menu toggle
+- Added `aria-hidden="true"` for decorative icons
+- Focus-visible styles for keyboard navigation
+- Screen reader only text class (`.sr-only`)
+- High contrast mode support (`prefers-contrast: high`)
+- Reduced motion support (`prefers-reduced-motion: reduce`)
+- Semantic HTML with `role="main"` for content area
 
 ### 4. Notification Preferences
 **Priority:** Medium  
-**Impact:** Improves user control
+**Status:** ✅ **COMPLETED** (May 2026)
 
-**Recommendation:**
-- Add granular notification settings
-- Implement email notifications
-- Add SMS notifications for critical events
-- Create notification digest options
-- Add quiet hours setting
+**Implementation:**
+- Created `notification-settings.php` settings page
+- Granular notification controls:
+  - Email notifications toggle
+  - SMS notifications toggle
+  - Job/Application alerts toggle
+  - Message notifications toggle
+  - Marketing emails toggle
+- Quiet hours configuration (start/end time)
+- Settings linked from worker and employer dashboards
+- **Database Table:** `notification_preferences`
+  - id, user_id, email_notifications, sms_notifications, job_alerts, message_notifications, marketing_emails, quiet_hours_start, quiet_hours_end
 
 ### 5. Dark Mode Support
 **Priority:** Low  
-**Impact:** Improves user comfort
+**Status:** ✅ **COMPLETED** (May 2026)
 
-**Recommendation:**
-- Implement dark mode theme
-- Add system preference detection
-- Create smooth theme transitions
-- Ensure all components support both themes
+**Implementation:**
+- Added dark mode CSS variables in `style.css`
+- Theme toggle button in header (sun/moon icons)
+- Three modes: Light, Dark, Auto (system preference)
+- `data-theme` attribute on `<html>` element
+- LocalStorage persistence for guest users
+- Database persistence (`users.theme_preference`) for logged-in users
+- API endpoint `api/update-theme.php` to save preferences
+- Smooth CSS transitions between themes
+- Respects `prefers-color-scheme: dark` media query
+- All components styled for dark mode compatibility
+
+**New Files:**
+- `api/update-theme.php` - Theme preference API
+
+**New Database Column:**
+- `users.theme_preference` - ENUM('light', 'dark', 'auto')
 
 ---
 
@@ -528,7 +559,7 @@ CREATE INDEX idx_user_skill_match ON user_skills(user_id, skill_name, proficienc
 | **P2** | Company Profiles | Medium | Medium | ✅ Done |
 | **P3** | Mobile App | High | Medium | Pending |
 | **P3** | Video Calling | High | Low | Pending |
-| **P3** | Dark Mode | Low | Low | Pending |
+| **P3** | ~~Dark Mode~~ | Low | Low | ✅ Done |
 
 ---
 
@@ -550,7 +581,9 @@ CREATE INDEX idx_user_skill_match ON user_skills(user_id, skill_name, proficienc
    - ✅ ~~Add advanced search~~ **DONE**
    - ✅ ~~Implement worker portfolios~~ **DONE**
    - ✅ ~~Create company profiles~~ **DONE**
-   - Enhance onboarding flow
+   - ✅ ~~Enhance onboarding flow~~ **DONE**
+   - ✅ ~~Responsive design improvements~~ **DONE**
+   - ✅ ~~Accessibility improvements~~ **DONE**
 
 4. **Long-term (12+ months):**
    - Develop mobile app
@@ -570,18 +603,39 @@ CREATE INDEX idx_user_skill_match ON user_skills(user_id, skill_name, proficienc
 
 ## Recently Completed (May 2026)
 
+### Core Features
 1. **Resume PDF Upload** - Workers can upload PDF resumes with validation
 2. **Advanced Search & Filtering** - Comprehensive search with multiple filters
 3. **Worker Portfolio System** - Workers can showcase their work with images
 4. **Employer Company Profiles** - Enhanced company information and logos
 
-**Database Migrations Required:**
-- `database/migrate_portfolio_table.sql` - Worker portfolio table
-- `database/migrate_company_profiles.sql` - Company profile columns to users table
+### User Experience Improvements (All 5 Completed)
+5. **Onboarding Flow** - 4-step guided wizard for new users with progress indicators
+6. **Responsive Design** - Mobile bottom nav, hamburger menu, touch-friendly UI
+7. **Accessibility** - Skip links, ARIA labels, keyboard navigation, screen reader support
+8. **Notification Preferences** - Granular settings with quiet hours configuration
+9. **Dark Mode** - Theme toggle with light/dark/auto modes and system preference detection
+
+**Database Schema Updates:**
+- `worker_portfolio` table - Portfolio items storage
+- `notification_preferences` table - User notification settings
+- `users` table additions:
+  - `onboarding_completed`, `onboarding_completed_at` - Onboarding tracking
+  - `theme_preference` - Dark mode setting
+  - `company_name`, `company_size`, `industry`, `company_website`, `year_founded`, `company_logo` - Company profiles
 
 **New Files Created:**
 - `advanced-search.php` - Advanced search page
 - `worker-portfolio.php` - Portfolio management page
-- Updated `dashboard-employer.php` - Company profile editing
-- Updated `dashboard-worker.php` - Portfolio link added
-- Updated `config/config.php` - New upload directories
+- `onboarding.php` - User onboarding wizard
+- `notification-settings.php` - Notification preferences page
+- `api/update-theme.php` - Theme preference API endpoint
+- `database/schema_unified.sql` - Complete unified database schema
+
+**Updated Files:**
+- `dashboard-employer.php` - Company profile editing, notification settings link
+- `dashboard-worker.php` - Portfolio link, notification settings link
+- `login.php` - Onboarding redirect logic
+- `includes/header.php` - Theme toggle, mobile nav, accessibility improvements
+- `css/style.css` - Dark mode variables, mobile styles, accessibility styles
+- `config/config.php` - New upload directories (PORTFOLIO_IMAGES_DIR, COMPANY_LOGOS_DIR)
