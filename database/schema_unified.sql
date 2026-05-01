@@ -1,25 +1,34 @@
--- RaketGo Database Schema
+-- RaketGo Database Schema - Unified Version
 -- Created and managed by Moesoft (Moeko Software)
-
+-- Last Updated: May 2026
+-- 
+-- This file contains the complete database schema including all tables and migrations.
+-- Use this file to recreate the entire database from scratch.
+--
 -- For shared hosting (including InfinityFree), select your target database in phpMyAdmin before importing.
 -- Example for local WAMP testing only:
 -- CREATE DATABASE IF NOT EXISTS raketgo CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 -- USE raketgo;
 
--- Drop existing tables if they exist
+-- Drop existing tables if they exist (in correct order due to foreign keys)
+DROP TABLE IF EXISTS trust_score_updates;
+DROP TABLE IF EXISTS job_ratings;
+DROP TABLE IF EXISTS employer_reviews;
+DROP TABLE IF EXISTS worker_portfolio;
+DROP TABLE IF EXISTS transactions;
+DROP TABLE IF EXISTS user_interactions;
+DROP TABLE IF EXISTS auth_rate_limits;
+DROP TABLE IF EXISTS notifications;
+DROP TABLE IF EXISTS messages;
+DROP TABLE IF EXISTS skill_posts;
+DROP TABLE IF EXISTS digital_contracts;
 DROP TABLE IF EXISTS job_applications;
 DROP TABLE IF EXISTS job_posts;
-DROP TABLE IF EXISTS messages;
-DROP TABLE IF EXISTS notifications;
-DROP TABLE IF EXISTS auth_rate_limits;
-DROP TABLE IF EXISTS skill_posts;
 DROP TABLE IF EXISTS user_skills;
-DROP TABLE IF EXISTS user_interactions;
-DROP TABLE IF EXISTS transactions;
-DROP TABLE IF EXISTS digital_contracts;
 DROP TABLE IF EXISTS users;
 
 -- Users table (for all three account types)
+-- Includes company profile fields for enhanced employer profiles
 CREATE TABLE users (
     user_id INT PRIMARY KEY AUTO_INCREMENT,
     mobile_number VARCHAR(15) UNIQUE NOT NULL,
@@ -41,6 +50,13 @@ CREATE TABLE users (
     payment_method VARCHAR(255),
     payment_details TEXT,
     is_verified BOOLEAN DEFAULT FALSE,
+    -- Company profile fields (for employer_subtype = 'company')
+    company_name VARCHAR(255) DEFAULT NULL,
+    company_size ENUM('1-10', '11-50', '51-200', '201-500', '500+') DEFAULT NULL,
+    industry VARCHAR(100) DEFAULT NULL,
+    company_website VARCHAR(255) DEFAULT NULL,
+    year_founded YEAR DEFAULT NULL,
+    company_logo VARCHAR(255) DEFAULT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     last_login TIMESTAMP NULL,
@@ -48,7 +64,8 @@ CREATE TABLE users (
     INDEX idx_user_type (user_type),
     INDEX idx_employer_subtype (employer_subtype),
     INDEX idx_location (region, province, city),
-    INDEX idx_trust_score (trust_score)
+    INDEX idx_trust_score (trust_score),
+    INDEX idx_industry (industry)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- User skills table (many-to-many relationship with skill tags)
@@ -67,6 +84,25 @@ CREATE TABLE user_skills (
     UNIQUE KEY uniq_user_skill (user_id, skill_name),
     INDEX idx_user_skills (user_id),
     INDEX idx_skill_name (skill_name)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Worker portfolio table (for showcasing work samples)
+CREATE TABLE worker_portfolio (
+    portfolio_id INT PRIMARY KEY AUTO_INCREMENT,
+    worker_id INT NOT NULL,
+    title VARCHAR(200) NOT NULL,
+    description TEXT,
+    image_path VARCHAR(255),
+    project_url VARCHAR(500),
+    skills_used VARCHAR(255),
+    is_featured BOOLEAN DEFAULT FALSE,
+    views_count INT DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (worker_id) REFERENCES users(user_id) ON DELETE CASCADE,
+    INDEX idx_worker (worker_id),
+    INDEX idx_featured (is_featured, created_at),
+    INDEX idx_created (created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Job posts table
@@ -105,7 +141,7 @@ CREATE TABLE job_posts (
     INDEX idx_status_pay_created (job_status, pay_amount, created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Job applications table
+-- Job applications table (includes resume_file for PDF uploads)
 CREATE TABLE job_applications (
     application_id INT PRIMARY KEY AUTO_INCREMENT,
     job_id INT NOT NULL,
@@ -115,7 +151,6 @@ CREATE TABLE job_applications (
     cover_letter TEXT,
     resume_file VARCHAR(255) NULL,
     applied_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-
     reviewed_at TIMESTAMP NULL,
     worker_confirmed BOOLEAN DEFAULT FALSE,
     employer_confirmed BOOLEAN DEFAULT FALSE,
@@ -336,8 +371,42 @@ CREATE TABLE employer_reviews (
     INDEX idx_created (created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- ============================================================================
+-- END OF SCHEMA
+-- ============================================================================
+
 -- Optional: create your first admin account manually after import.
 -- IMPORTANT: generate your own strong password hash and never keep default credentials in production.
 -- Example:
 -- INSERT INTO users (mobile_number, email, password_hash, user_type, full_name, region, province, city)
 -- VALUES ('09XXXXXXXXX', 'admin@example.com', '$2y$10$replace_with_real_hash', 'admin', 'Platform Administrator', 'NCR', 'Metro Manila', 'Manila');
+
+-- ============================================================================
+-- NOTES FOR DEVELOPERS
+-- ============================================================================
+--
+-- This unified schema includes:
+-- 1. All original tables from the base schema
+-- 2. worker_portfolio table - for worker portfolio items (May 2026)
+-- 3. Company profile columns in users table - for enhanced employer profiles (May 2026):
+--    - company_name
+--    - company_size
+--    - industry
+--    - company_website
+--    - year_founded
+--    - company_logo
+--
+-- Upload directories (auto-created by config/config.php):
+-- - uploads/profiles/ - User profile pictures
+-- - uploads/jobs/ - Job images
+-- - uploads/documents/ - General documents
+-- - uploads/posts/ - Skill post thumbnails
+-- - uploads/resumes/ - Worker resume PDFs
+-- - uploads/portfolio/ - Worker portfolio images
+-- - uploads/company_logos/ - Company logos
+--
+-- To use this schema:
+-- 1. Select your database in phpMyAdmin or your MySQL client
+-- 2. Import this file
+-- 3. The tables will be created with proper indexes and foreign keys
+-- 4. No need to run separate migration files

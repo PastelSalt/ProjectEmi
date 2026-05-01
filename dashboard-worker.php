@@ -456,6 +456,7 @@ $stats = $statsResult ?: ['total_applications' => 0, 'approved_jobs' => 0, 'comp
                 <div class="panel-body-compact">
                     <a href="for-you.php" class="btn btn-white btn-small btn-block mb-1"><i class="fas fa-star"></i> Recommendations</a>
                     <a href="index.php" class="btn btn-white btn-small btn-block mb-1"><i class="fas fa-search"></i> Browse Jobs</a>
+                    <a href="worker-portfolio.php" class="btn btn-white btn-small btn-block mb-1"><i class="fas fa-briefcase"></i> My Portfolio</a>
                     <a href="messages.php" class="btn btn-white btn-small btn-block mb-1"><i class="fas fa-envelope"></i> Messages</a>
                     <a href="skill-learn.php" class="btn btn-white btn-small btn-block"><i class="fas fa-graduation-cap"></i> Learn Skills</a>
                 </div>

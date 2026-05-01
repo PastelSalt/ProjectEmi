@@ -68,9 +68,11 @@ define('JOB_IMAGES_DIR', UPLOAD_DIR . 'jobs/');
 define('DOCUMENTS_DIR', UPLOAD_DIR . 'documents/');
 define('POST_IMAGES_DIR', UPLOAD_DIR . 'posts/');
 define('RESUMES_DIR', UPLOAD_DIR . 'resumes/');
+define('PORTFOLIO_IMAGES_DIR', UPLOAD_DIR . 'portfolio/');
+define('COMPANY_LOGOS_DIR', UPLOAD_DIR . 'company_logos/');
 
 // Create upload directories if they don't exist
-$dirs = [UPLOAD_DIR, PROFILE_PICS_DIR, JOB_IMAGES_DIR, DOCUMENTS_DIR, POST_IMAGES_DIR, RESUMES_DIR];
+$dirs = [UPLOAD_DIR, PROFILE_PICS_DIR, JOB_IMAGES_DIR, DOCUMENTS_DIR, POST_IMAGES_DIR, RESUMES_DIR, PORTFOLIO_IMAGES_DIR, COMPANY_LOGOS_DIR];
 foreach ($dirs as $dir) {
     if (!file_exists($dir)) {
         mkdir($dir, 0755, true);

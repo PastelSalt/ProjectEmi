@@ -124,6 +124,78 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                     $error = 'Failed to update profile. Please try again.';
                 }
             }
+        } elseif ($action === 'update_company_profile') {
+            // Handle company profile update
+            $company_name = sanitizeInput($_POST['company_name'] ?? '');
+            $company_size = sanitizeInput($_POST['company_size'] ?? '');
+            $industry = sanitizeInput($_POST['industry'] ?? '');
+            $company_website = sanitizeExternalUrl($_POST['company_website'] ?? '');
+            $year_founded = (int)($_POST['year_founded'] ?? 0);
+
+            // Validation
+            $valid_sizes = ['1-10', '11-50', '51-200', '201-500', '500+'];
+            if (!empty($company_size) && !in_array($company_size, $valid_sizes, true)) {
+                $error = 'Please select a valid company size.';
+            } elseif (strlen($company_name) > 255) {
+                $error = 'Company name cannot exceed 255 characters.';
+            } elseif (strlen($industry) > 100) {
+                $error = 'Industry cannot exceed 100 characters.';
+            } elseif ($year_founded > 0 && ($year_founded < 1800 || $year_founded > date('Y'))) {
+                $error = 'Please enter a valid year founded.';
+            } else {
+                if (executeQuery($conn,
+                    "UPDATE users SET company_name = ?, company_size = ?, industry = ?, company_website = ?, year_founded = ? WHERE user_id = ?",
+                    [$company_name ?: null, $company_size ?: null, $industry ?: null, $company_website ?: null, $year_founded > 0 ? $year_founded : null, $user_id],
+                    'ssssii'
+                )) {
+                    $success = 'Company profile updated successfully!';
+                } else {
+                    $error = 'Failed to update company profile. Please try again.';
+                }
+            }
+        } elseif ($action === 'upload_company_logo') {
+            // Handle company logo upload
+            if (isset($_FILES['company_logo']) && $_FILES['company_logo']['error'] === UPLOAD_ERR_OK) {
+                $file = $_FILES['company_logo'];
+                $fileSize = $file['size'];
+                $fileTmpPath = $file['tmp_name'];
+                $fileName = $file['name'];
+                $fileType = mime_content_type($fileTmpPath);
+
+                // Validate file type (images only)
+                $allowedMimeTypes = ['image/jpeg', 'image/png', 'image/webp'];
+                if (!in_array($fileType, $allowedMimeTypes, true)) {
+                    $error = 'Invalid image type. Please upload JPEG, PNG, or WebP.';
+                } elseif ($fileSize > 2 * 1024 * 1024) { // 2MB limit
+                    $error = 'Image size exceeds 2MB limit.';
+                } else {
+                    // Generate unique filename
+                    $fileExtension = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
+                    $uniqueFileName = uniqid('company_logo_', true) . '_' . $user_id . '.' . $fileExtension;
+                    $destination = COMPANY_LOGOS_DIR . $uniqueFileName;
+
+                    // Delete old logo if exists
+                    if (!empty($user['company_logo'])) {
+                        $oldFile = BASE_PATH . $user['company_logo'];
+                        if (file_exists($oldFile)) {
+                            unlink($oldFile);
+                        }
+                    }
+
+                    if (move_uploaded_file($fileTmpPath, $destination)) {
+                        $company_logo = 'uploads/company_logos/' . $uniqueFileName;
+                        if (executeQuery($conn, "UPDATE users SET company_logo = ? WHERE user_id = ?", [$company_logo, $user_id], 'si')) {
+                            $success = 'Company logo updated successfully!';
+                        } else {
+                            $error = 'Failed to save company logo.';
+                        }
+                    } else {
+                        $error = 'Failed to upload company logo. Please try again.';
+                    }
+                }
+            } else {
+                $error = 'Please select an image to upload.';
+            }
         }
     }
 }
@@ -272,6 +344,85 @@ $stats = $statsResult ?: ['total_jobs' => 0, 'active_jobs' => 0, 'total_applicat
                             </a>
                         </div>
                     </form>
+
+                    <!-- Company Profile Section (Only for Company type) -->
+                    <?php if (($user['employer_subtype'] ?? '') === 'company'): ?>
+                    <div style="margin-top: 24px; padding-top: 24px; border-top: 2px solid var(--border-light);">
+                        <h4 style="margin-bottom: 16px;"><i class="fas fa-building" style="color: var(--primary-blue);"></i> Company Information</h4>
+
+                        <!-- Company Logo Upload -->
+                        <form method="POST" enctype="multipart/form-data" style="margin-bottom: 16px;">
+                            <?php echo csrfField(); ?>
+                            <input type="hidden" name="action" value="upload_company_logo">
+                            <div class="d-flex gap-2 align-center">
+                                <?php if (!empty($user['company_logo'])): ?>
+                                    <img src="<?php echo htmlspecialchars($user['company_logo']); ?>" alt="Company Logo" style="width: 60px; height: 60px; object-fit: contain; border: 1px solid var(--border-light); border-radius: 4px;">
+                                <?php else: ?>
+                                    <div style="width: 60px; height: 60px; background: var(--gray-lightest); display: flex; align-items: center; justify-content: center; border-radius: 4px;">
+                                        <i class="fas fa-building" style="font-size: 1.5rem; color: var(--gray-mid);"></i>
+                                    </div>
+                                <?php endif; ?>
+                                <input type="file" name="company_logo" class="form-control" accept="image/jpeg,image/png,image/webp" style="flex: 1; font-size: 0.85rem;">
+                                <button type="submit" class="btn btn-secondary btn-small">
+                                    <i class="fas fa-image"></i> Update Logo
+                                </button>
+                            </div>
+                            <small class="text-muted">Max 2MB. JPEG, PNG, or WebP.</small>
+                        </form>
+
+                        <!-- Company Details Form -->
+                        <form method="POST">
+                            <?php echo csrfField(); ?>
+                            <input type="hidden" name="action" value="update_company_profile">
+
+                            <div class="form-group" style="margin-bottom: 12px;">
+                                <label for="company_name" class="text-small"><strong>Company Name</strong></label>
+                                <input type="text" id="company_name" name="company_name" class="form-control"
+                                       value="<?php echo htmlspecialchars($user['company_name'] ?? ''); ?>"
+                                       placeholder="Official company name">
+                            </div>
+
+                            <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+                                <div class="form-group">
+                                    <label for="company_size" class="text-small"><strong>Company Size</strong></label>
+                                    <select id="company_size" name="company_size" class="form-control">
+                                        <option value="">Select size</option>
+                                        <option value="1-10" <?php echo ($user['company_size'] ?? '') === '1-10' ? 'selected' : ''; ?>>1-10 employees</option>
+                                        <option value="11-50" <?php echo ($user['company_size'] ?? '') === '11-50' ? 'selected' : ''; ?>>11-50 employees</option>
+                                        <option value="51-200" <?php echo ($user['company_size'] ?? '') === '51-200' ? 'selected' : ''; ?>>51-200 employees</option>
+                                        <option value="201-500" <?php echo ($user['company_size'] ?? '') === '201-500' ? 'selected' : ''; ?>>201-500 employees</option>
+                                        <option value="500+" <?php echo ($user['company_size'] ?? '') === '500+' ? 'selected' : ''; ?>>500+ employees</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="year_founded" class="text-small"><strong>Year Founded</strong></label>
+                                    <input type="number" id="year_founded" name="year_founded" class="form-control"
+                                           value="<?php echo htmlspecialchars($user['year_founded'] ?? ''); ?>"
+                                           placeholder="e.g., 2010" min="1800" max="<?php echo date('Y'); ?>">
+                                </div>
+                            </div>
+
+                            <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+                                <div class="form-group">
+                                    <label for="industry" class="text-small"><strong>Industry</strong></label>
+                                    <input type="text" id="industry" name="industry" class="form-control"
+                                           value="<?php echo htmlspecialchars($user['industry'] ?? ''); ?>"
+                                           placeholder="e.g., Technology, Construction">
+                                </div>
+                                <div class="form-group">
+                                    <label for="company_website" class="text-small"><strong>Company Website</strong></label>
+                                    <input type="url" id="company_website" name="company_website" class="form-control"
+                                           value="<?php echo htmlspecialchars($user['company_website'] ?? ''); ?>"
+                                           placeholder="https://example.com">
+                                </div>
+                            </div>
+
+                            <button type="submit" class="btn btn-primary btn-small">
+                                <i class="fas fa-save"></i> Save Company Info
+                            </button>
+                        </form>
+                    </div>
+                    <?php endif; ?>
                 </div>
             </div>
 
