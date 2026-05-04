@@ -53,66 +53,6 @@
     --radius-lg: 12px;
 }
 
-/* ===== DARK MODE ===== */
-[data-theme="dark"] {
-    --primary-blue: #7B9FB5;
-    --primary-blue-light: #2A3F4D;
-    --primary-blue-bg: #1E2A33;
-    --primary-blue-dark: #A8C5D4;
-    --pastel-blue: #2A4A5E;
-    --pastel-blue-dark: #3A6A8A;
-    --pastel-pink: #4A3A4A;
-    --pastel-pink-dark: #6A4A5A;
-    --accent-pink: #B4849A;
-    --accent-pink-light: #4A3A40;
-    --header-bar-bg: #2A3F4D;
-    --section-header: #4A6A7A;
-    --white: #1A1A1A;
-    --off-white: #242424;
-    --gray-lightest: #2A2A2A;
-    --gray-light: #3A3A3A;
-    --gray: #4A4A4A;
-    --gray-mid: #6A6A6A;
-    --gray-dark: #8A8A8A;
-    --panel-border: #3A3A3A;
-    --border-light: #3A3A3A;
-    --text-muted: #9A9A9A;
-    --text-dark: #E8E8E8;
-    --text-mid: #C8C8C8;
-    --text-light: #9A9A9A;
-    --text-on-blue: #FFFFFF;
-    --green-badge: #48C76A;
-    --green-bg: #2A4A3A;
-    --green-text: #88E8A8;
-    --red-badge: #FF6B7A;
-    --red-bg: #4A2A2E;
-    --red-text: #FFB8C0;
-    --yellow-badge: #FFD700;
-    --shadow-sm: 0 1px 4px rgba(0,0,0,0.3);
-    --shadow-md: 0 3px 12px rgba(0,0,0,0.4);
-    --shadow-lg: 0 6px 24px rgba(0,0,0,0.5);
-    --shadow-xl: 0 12px 40px rgba(0,0,0,0.6);
-    --shadow-blue: 0 4px 20px rgba(123, 159, 181, 0.15);
-    --shadow-pink: 0 4px 20px rgba(180, 132, 154, 0.15);
-    --shadow-card: 0 2px 14px rgba(0,0,0,0.4);
-}
-
-/* Auto dark mode based on system preference */
-@media (prefers-color-scheme: dark) {
-    :root:not([data-theme="light"]) {
-        --primary-blue: #7B9FB5;
-        --primary-blue-light: #2A3F4D;
-        --primary-blue-bg: #1E2A33;
-        --primary-blue-dark: #A8C5D4;
-        --white: #1A1A1A;
-        --off-white: #242424;
-        --gray-lightest: #2A2A2A;
-        --gray-light: #3A3A3A;
-        --text-dark: #E8E8E8;
-        --text-mid: #C8C8C8;
-        --text-light: #9A9A9A;
-    }
-}
 
 /* ===== RESET & BASE ===== */
 * {
@@ -3329,7 +3269,65 @@ body.rg.site-modern .nav-link.active {
 body.rg.site-modern .nav-right {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
+}
+
+/* Navigation Grouping Styles */
+.nav-utilities {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.nav-communications {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.nav-user-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.nav-secondary {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.nav-guest-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Navigation Separators */
+.nav-communications::after {
+    content: '';
+    width: 1px;
+    height: 20px;
+    background: var(--border-light);
+    margin-left: 8px;
+}
+
+.nav-secondary::before {
+    content: '';
+    width: 1px;
+    height: 20px;
+    background: var(--border-light);
+    margin-right: 8px;
+}
+
+/* Profile Picture in Navigation */
+.nav-user-actions .nav-link img {
+    border: 2px solid var(--primary-blue-light);
+    transition: border-color 0.2s ease;
+}
+
+.nav-user-actions .nav-link:hover img {
+    border-color: var(--primary-blue-dark);
 }
 
 body.rg.site-modern .icon-btn {

@@ -40,9 +40,9 @@ if (!$employer) {
 $employerTypeConfig = [
     'company' => ['label' => 'Company', 'icon' => 'fa-building', 'color' => 'blue'],
     'individual' => ['label' => 'Individual', 'icon' => 'fa-user', 'color' => 'green'],
-    null => ['label' => 'Employer', 'icon' => 'fa-briefcase', 'color' => 'gray']
+    '' => ['label' => 'Employer', 'icon' => 'fa-briefcase', 'color' => 'gray']
 ];
-$typeInfo = $employerTypeConfig[$employer['employer_subtype']] ?? $employerTypeConfig[null];
+$typeInfo = $employerTypeConfig[$employer['employer_subtype']] ?? $employerTypeConfig[''];
 
 // Fetch employer statistics
 $statsSql = "SELECT 
@@ -80,7 +80,7 @@ $completedJobs = fetchAll($conn,
 
 // Fetch reviews with worker details
 $reviews = fetchAll($conn,
-    "SELECT er.*, u.full_name as worker_name, u.profile_picture as worker_picture
+    "SELECT er.*, u.full_name as worker_name, u.profile_picture as worker_picture, u.user_id as worker_id
      FROM employer_reviews er
      JOIN users u ON er.worker_id = u.user_id
      WHERE er.employer_id = ?
@@ -336,7 +336,11 @@ $isOwnProfile = ($currentUserId == $employer_id);
                                         </div>
                                     <?php endif; ?>
                                     <div>
-                                        <div class="text-small" style="font-weight: 600;"><?php echo htmlspecialchars($review['worker_name']); ?></div>
+                                        <div class="text-small" style="font-weight: 600;">
+                                            <a href="worker-profile.php?id=<?php echo $review['worker_id']; ?>" style="color: inherit; text-decoration: none;">
+                                                <?php echo htmlspecialchars($review['worker_name']); ?>
+                                            </a>
+                                        </div>
                                         <div style="color: #FFD700; font-size: 0.75rem;">
                                             <?php for ($i = 1; $i <= 5; $i++): ?>
                                                 <i class="fas fa-star<?php echo $i <= $review['rating'] ? '' : '-empty'; ?>"></i>

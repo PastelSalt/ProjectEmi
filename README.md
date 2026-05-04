@@ -10,6 +10,11 @@ This repository contains a working web app with:
 - Production-oriented security hardening (session security, CSRF, login throttling, safe headers, hardened Apache rules)
 - Region-first home discovery with an interactive Philippines block map
 - Recommendation logic for both workers and employers using MatchScore algorithm
+- **Worker portfolios and employment history** - Comprehensive profile system with portfolio items, skills, and job history
+- **Enhanced navigation system** - Reorganized navigation with logical grouping and intuitive access
+- **Profile management separation** - Dedicated profile pages accessible from main navigation
+- **Notification settings** - Easy access to notification preferences from notifications page
+- **Terms & Conditions** - Complete legal framework with footer integration
 - Saved jobs, withdraw and reapply flow, and employer pause/reopen controls
 - Remote work policy support for job postings (On-site, Hybrid, Remote)
 - Rating availability with cooling-off period for long-term jobs
@@ -21,8 +26,10 @@ This repository contains a working web app with:
 ## Role Capabilities
 
 ### Worker
-- Create account and maintain profile
-- Add and remove skills with proficiency levels
+- Create account and maintain comprehensive profile
+- **Portfolio management** - Upload work samples, projects, and showcase skills
+- **Employment history tracking** - View complete job history and ratings
+- Add and remove skills with proficiency levels and verification
 - Browse jobs, filter, sort, and paginate
 - Apply to jobs with optional cover letter
 - Withdraw pending applications and reapply to withdrawn ones
@@ -31,11 +38,13 @@ This repository contains a working web app with:
 - Message employers and receive notifications
 - Rate employers after job completion (5-star + feedback)
 - Track personal trust score and rating history
+- **Direct profile access** from main navigation
 
 ### Employer
 - Create account and post jobs
 - View and manage posted jobs
-- Review pending applications
+- **View worker portfolios and employment history** - Access comprehensive worker profiles
+- Review pending applications with worker profile links
 - Approve and reject applications (with slot-safe checks)
 - Pause active jobs and reopen paused jobs (if slots are still open)
 - View recommended workers on For You
@@ -43,6 +52,7 @@ This repository contains a working web app with:
 - Rate workers after job completion (5-star + feedback)
 - Track personal trust score and rating history
 - View completed jobs and rate workers
+- **Direct profile access** from main navigation
 
 ### Admin
 - Access platform summary metrics and operational dashboard

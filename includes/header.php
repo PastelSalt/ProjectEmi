@@ -67,6 +67,7 @@ if (isLoggedIn()) {
             </button>
             
             <div class="nav-links nav-menu" id="mainNavMenu">
+                <!-- Core Navigation -->
                 <a href="index.php" class="nav-link <?php echo $current_page == 'index' ? 'active' : ''; ?>">
                     <i class="fas fa-house nav-item-icon" aria-hidden="true"></i>
                     <span>Home</span>
@@ -75,26 +76,23 @@ if (isLoggedIn()) {
                 <?php if (isLoggedIn()): ?>
                     <a href="for-you.php" class="nav-link <?php echo $current_page == 'for-you' ? 'active' : ''; ?>">
                         <i class="fas fa-compass nav-item-icon" aria-hidden="true"></i>
-                        <span>For You</span>
+                        <span>Discover</span>
                     </a>
                     <a href="skill-learn.php" class="nav-link <?php echo $current_page == 'skill-learn' ? 'active' : ''; ?>">
                         <i class="fas fa-graduation-cap nav-item-icon" aria-hidden="true"></i>
                         <span>Learn</span>
                     </a>
-                    <a href="messages.php" class="nav-link <?php echo $current_page == 'messages' ? 'active' : ''; ?>">
-                        <i class="fas fa-message nav-item-icon" aria-hidden="true"></i>
-                        <span>Messages</span>
-                    </a>
                     
+                    <!-- Role-specific primary action -->
                     <?php if (getCurrentUserType() == 'worker'): ?>
-                        <a href="dashboard-worker.php" class="nav-link <?php echo $current_page == 'dashboard-worker' ? 'active' : ''; ?>">
-                            <i class="fas fa-gauge-high nav-item-icon" aria-hidden="true"></i>
-                            <span>Dashboard</span>
+                        <a href="jobs.php" class="nav-link <?php echo $current_page == 'jobs' ? 'active' : ''; ?>">
+                            <i class="fas fa-briefcase nav-item-icon" aria-hidden="true"></i>
+                            <span>Find Jobs</span>
                         </a>
                     <?php elseif (getCurrentUserType() == 'employer'): ?>
                         <a href="dashboard-employer.php" class="nav-link <?php echo $current_page == 'dashboard-employer' ? 'active' : ''; ?>">
                             <i class="fas fa-briefcase nav-item-icon" aria-hidden="true"></i>
-                            <span>Dashboard</span>
+                            <span>My Jobs</span>
                         </a>
                     <?php elseif (getCurrentUserType() == 'admin'): ?>
                         <a href="dashboard-admin.php" class="nav-link <?php echo $current_page == 'dashboard-admin' ? 'active' : ''; ?>">
@@ -103,6 +101,10 @@ if (isLoggedIn()) {
                         </a>
                     <?php endif; ?>
                 <?php else: ?>
+                    <a href="jobs.php" class="nav-link <?php echo $current_page == 'jobs' ? 'active' : ''; ?>">
+                        <i class="fas fa-briefcase nav-item-icon" aria-hidden="true"></i>
+                        <span>Browse Jobs</span>
+                    </a>
                     <a href="skill-learn.php" class="nav-link <?php echo $current_page == 'skill-learn' ? 'active' : ''; ?>">
                         <i class="fas fa-graduation-cap nav-item-icon" aria-hidden="true"></i>
                         <span>Learn</span>
@@ -111,11 +113,6 @@ if (isLoggedIn()) {
             </div>
 
             <div class="nav-right">
-                <!-- Theme Toggle -->
-                <button type="button" class="theme-toggle" id="themeToggle" aria-label="Toggle dark mode">
-                    <i class="fas fa-sun" aria-hidden="true" data-theme-icon="light"></i>
-                    <i class="fas fa-moon" aria-hidden="true" data-theme-icon="dark" style="display: none;"></i>
-                </button>
                 
                 <?php if (isLoggedIn()): ?>
                     <?php
@@ -126,49 +123,75 @@ if (isLoggedIn()) {
                     $_hNavUser = fetchOne($_hNavConn, "SELECT profile_picture, full_name FROM users WHERE user_id = ?", [$_hNavUid], 'i');
                     closeDBConnection($_hNavConn);
                     ?>
-                    <!-- Profile Picture in Nav -->
-                    <a href="<?php echo getCurrentUserType() == 'worker' ? 'dashboard-worker.php' : (getCurrentUserType() == 'employer' ? 'dashboard-employer.php' : 'dashboard-admin.php'); ?>" class="nav-link" title="My Dashboard">
-                        <?php if (!empty($_hNavUser['profile_picture'])): ?>
-                            <img src="<?php echo htmlspecialchars($_hNavUser['profile_picture']); ?>" alt="Profile" style="width: 28px; height: 28px; border-radius: 50%; object-fit: cover; vertical-align: middle;">
-                        <?php else: ?>
-                            <span class="nav-item-icon" style="width: 28px; height: 28px; border-radius: 50%; background: var(--primary-blue); color: #fff; display: inline-flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700;">
-                                <?php echo mb_strtoupper(mb_substr($_hNavUser['full_name'] ?? 'U', 0, 1, 'UTF-8'), 'UTF-8'); ?>
-                            </span>
-                        <?php endif; ?>
-                    </a>
-
-                    <a href="notifications.php" class="nav-link <?php echo $current_page == 'notifications' ? 'active' : ''; ?>" title="Notifications" aria-label="Notifications">
-                        <i class="fas fa-bell nav-item-icon" aria-hidden="true"></i>
-                        <span>Notifications</span>
-                        <?php if ($_hNavUnread && (int)$_hNavUnread['count'] > 0): ?>
-                            <span class="notif-dot"></span>
-                        <?php endif; ?>
-                    </a>
-
-                    <?php if (getCurrentUserType() === 'employer'): ?>
-                        <a href="post-job.php" class="btn-primary nav-cta">
-                            <i class="fas fa-plus nav-item-icon" aria-hidden="true"></i>
-                            <span>Post a Job</span>
+                    
+                    <!-- Communication -->
+                    <div class="nav-communications">
+                        <a href="messages.php" class="nav-link <?php echo $current_page == 'messages' ? 'active' : ''; ?>" title="Messages">
+                            <i class="fas fa-message nav-item-icon" aria-hidden="true"></i>
+                            <span>Messages</span>
                         </a>
-                    <?php endif; ?>
 
-                    <form method="POST" action="logout.php" class="nav-logout-form">
-                        <?php echo csrfField(); ?>
-                        <button type="submit" class="btn-logout">
-                            <i class="fas fa-right-from-bracket nav-item-icon" aria-hidden="true"></i>
-                            <span>Logout</span>
-                        </button>
-                    </form>
+                        <a href="notifications.php" class="nav-link <?php echo $current_page == 'notifications' ? 'active' : ''; ?>" title="Notifications" aria-label="Notifications">
+                            <i class="fas fa-bell nav-item-icon" aria-hidden="true"></i>
+                            <span>Notifications</span>
+                            <?php if ($_hNavUnread && (int)$_hNavUnread['count'] > 0): ?>
+                                <span class="notif-dot"></span>
+                            <?php endif; ?>
+                        </a>
+                    </div>
+
+                    <!-- User Actions -->
+                    <div class="nav-user-actions">
+                        <!-- Profile Link -->
+                        <a href="<?php 
+                            echo getCurrentUserType() == 'worker' ? 'worker-profile.php?id=' . $_hNavUid : 
+                                 (getCurrentUserType() == 'employer' ? 'employer-profile.php?id=' . $_hNavUid : 
+                                 'dashboard-admin.php'); 
+                        ?>" class="nav-link <?php echo $current_page == 'worker-profile' || $current_page == 'employer-profile' ? 'active' : ''; ?>" title="My Profile">
+                            <?php if (!empty($_hNavUser['profile_picture'])): ?>
+                                <img src="<?php echo htmlspecialchars($_hNavUser['profile_picture']); ?>" alt="Profile" style="width: 24px; height: 24px; border-radius: 50%; object-fit: cover;">
+                            <?php else: ?>
+                                <i class="fas fa-user nav-item-icon" aria-hidden="true"></i>
+                            <?php endif; ?>
+                            <span>Profile</span>
+                        </a>
+
+                        <!-- Secondary Actions -->
+                        <div class="nav-secondary">
+                            <?php if (getCurrentUserType() == 'worker'): ?>
+                                <a href="dashboard-worker.php" class="nav-link <?php echo $current_page == 'dashboard-worker' ? 'active' : ''; ?>" title="My Dashboard">
+                                    <i class="fas fa-th-large nav-item-icon" aria-hidden="true"></i>
+                                    <span>Dashboard</span>
+                                </a>
+                            <?php elseif (getCurrentUserType() == 'employer'): ?>
+                                <a href="post-job.php" class="btn-primary nav-cta">
+                                    <i class="fas fa-plus nav-item-icon" aria-hidden="true"></i>
+                                    <span>Post Job</span>
+                                </a>
+                            <?php endif; ?>
+
+                            <form method="POST" action="logout.php" class="nav-logout-form">
+                                <?php echo csrfField(); ?>
+                                <button type="submit" class="btn-logout">
+                                    <i class="fas fa-right-from-bracket nav-item-icon" aria-hidden="true"></i>
+                                    <span>Logout</span>
+                                </button>
+                            </form>
+                        </div>
+                    </div>
                     <?php unset($_hNavUnread, $_hNavUser); ?>
                 <?php else: ?>
-                    <a href="login.php" class="btn-login nav-auth-btn">
-                        <i class="fas fa-right-to-bracket nav-item-icon" aria-hidden="true"></i>
-                        <span>Login</span>
-                    </a>
-                    <a href="signup.php" class="btn-primary nav-auth-btn">
-                        <i class="fas fa-user-plus nav-item-icon" aria-hidden="true"></i>
-                        <span>Sign Up</span>
-                    </a>
+                    <!-- Guest Actions -->
+                    <div class="nav-guest-actions">
+                        <a href="login.php" class="btn-login nav-auth-btn">
+                            <i class="fas fa-right-to-bracket nav-item-icon" aria-hidden="true"></i>
+                            <span>Login</span>
+                        </a>
+                        <a href="signup.php" class="btn-primary nav-auth-btn">
+                            <i class="fas fa-user-plus nav-item-icon" aria-hidden="true"></i>
+                            <span>Sign Up</span>
+                        </a>
+                    </div>
                 <?php endif; ?>
             </div>
         </div>

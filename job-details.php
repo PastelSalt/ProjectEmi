@@ -235,7 +235,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isLoggedIn() && getCurrentUserType()
             }
         }
     }
-}
 
 // Handle application approval/rejection (for employers)
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isLoggedIn() && getCurrentUserType() == 'employer') {
@@ -770,6 +769,9 @@ if (isLoggedIn()) {
                                                     </span>
                                                 <?php endif; ?>
                                             <?php endif; ?>
+                                            <a href="worker-profile.php?id=<?php echo $app['worker_id']; ?>" class="btn btn-outline btn-small">
+                                                <i class="fas fa-user"></i> View Profile
+                                            </a>
                                             <a href="messages.php?user=<?php echo $app['worker_id']; ?>" class="btn btn-secondary btn-small">
                                                 <i class="fas fa-envelope"></i> Message
                                             </a>

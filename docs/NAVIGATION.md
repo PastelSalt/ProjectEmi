@@ -43,15 +43,23 @@
 | `/rate-worker.php` | `rate-worker.php` | Employer rates worker after job completion |
 | `/rate-employer.php` | `rate-employer.php` | Worker rates employer after job completion |
 
-### 2.3 Role-Specific Dashboards
+### 2.3 Profile Pages
 
 | Role | Route | File | Key Actions |
 |------|-------|------|-------------|
-| **Worker** | `/dashboard-worker.php` | `dashboard-worker.php` | Update profile, add/delete skills, view saved jobs, metrics |
+| **Worker** | `/worker-profile.php?id=X` | `worker-profile.php` | View comprehensive profile, portfolio, skills, employment history |
+| **Employer** | `/employer-profile.php?id=X` | `employer-profile.php` | View employer profile, company info, reviews, job history |
+| **Admin** | N/A | N/A | Uses dashboard-admin.php (no public profile) |
+
+### 2.4 Role-Specific Dashboards
+
+| Role | Route | File | Key Actions |
+|------|-------|------|-------------|
+| **Worker** | `/dashboard-worker.php` | `dashboard-worker.php` | View applications, saved jobs, skills management, metrics |
 | **Employer** | `/dashboard-employer.php` | `dashboard-employer.php` | View posted jobs, pause/reopen jobs, review applicants, metrics |
 | **Admin** | `/dashboard-admin.php` | `dashboard-admin.php` | Platform stats, user/job counts, trust score audits, quick actions |
 
-### 2.4 Admin-Only Management
+### 2.5 Admin-Only Management
 
 | Route | File | What it does |
 |-------|------|--------------|
@@ -295,6 +303,10 @@ ProjectEmi/
 ├── skill-learn.php                    # Learning hub
 ├── rate-worker.php                    # Employer → worker rating
 ├── rate-employer.php                  # Worker → employer rating
+├── worker-profile.php                 # Worker public profile
+├── employer-profile.php               # Employer public profile
+├── terms.php                          # Terms & Conditions page
+├── notification-settings.php          # Notification preferences
 ├── add-skill-post.php                 # Admin content creation
 ├── manage-users.php                   # Admin user management
 ├── analytics.php                      # Admin analytics
@@ -335,6 +347,14 @@ ProjectEmi/
 
 ---
 
-*Last updated: March 2026*  
+*Last updated: May 2026*  
 *If you add/remove pages or change core flows, update this file so the next developer doesn't get lost.*
+
+## Recent Navigation Updates (May 2026)
+
+- **Profile Pages Added**: `worker-profile.php` and `employer-profile.php` for comprehensive profile viewing
+- **Navigation Reorganized**: Main navigation now includes dedicated Profile and Dashboard links
+- **Terms Page Added**: `terms.php` with footer integration across all pages
+- **Notification Settings**: Enhanced `notification-settings.php` with improved navigation flow
+- **Dark Mode Removed**: Theme toggle eliminated from navigation for cleaner interface
 

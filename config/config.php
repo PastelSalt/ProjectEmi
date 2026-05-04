@@ -5,6 +5,9 @@
  * Created and managed by Moesoft (Moeko Software)
  */
 
+// Disable PCRE JIT to prevent memory allocation warnings
+ini_set('pcre.jit', '0');
+
 // Check required extensions
 if (!extension_loaded('mbstring')) {
     die('The mbstring PHP extension is required. Please install and enable it.');

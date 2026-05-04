@@ -33,10 +33,13 @@ b. Proposed Website Idea:
 
      - Localized job feed with advanced filters (region/province, sector, contract type, remote/hybrid, tags).
      - Role-based dashboards for `workers`, `employers`, and `admins` to manage profiles, postings, applications, and moderation.
+     - **Worker portfolio system** with work samples, project showcases, and comprehensive employment history tracking.
+     - **Enhanced profile management** with dedicated profile pages accessible from main navigation.
      - Verified employer profiles and admin verification workflow to reduce scam postings.
      - In-platform messaging, notifications, and application tracking to speed hiring (maps to `messages.php`, `notifications.php`, `dashboard-*` pages).
      - Profile and document uploads for resumes, certificates, and IDs (use `uploads/profiles` and `uploads/documents` folders) to support verification and showcase micro-credentials.
      - Integrated skills hub (interlinked with `skill-learn.php`) offering micro-courses or links to partner training (TESDA/NGOs), and badges/micro-credentials to improve match signals.
+     - **Employer access to worker portfolios** for better hiring decisions and candidate evaluation.
      - Simple admin tools for moderation, analytics, and localized outreach to partner barangay or LGU job desks.
 
    - Philippine-specific design considerations: mobile-first and low-bandwidth UI, Tagalog/English copy, support for common e-wallets or bank transfer for paid micro-gigs, and integration options for local training centers and labor offices.

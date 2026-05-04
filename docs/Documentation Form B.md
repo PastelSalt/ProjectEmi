@@ -93,27 +93,58 @@ Main content:
 - Recommended workers for employers (skill overlap aligned)
 - Trending jobs and prioritized suggestions
 
-### 8) Worker Dashboard (`dashboard-worker.php`) - Worker Operations Center
+### 8) Worker Profile (`worker-profile.php`) - Comprehensive Worker Portfolio
+Purpose:
+- Display complete worker profile with portfolio and employment history
+- Allow employers to evaluate candidates thoroughly
+- Showcase worker skills, experience, and work samples
+
+Main content:
+- Profile picture, basic info, and trust score display
+- Skills and expertise with verification badges
+- Portfolio items with work samples and project descriptions
+- Complete employment history with past jobs and ratings
+- Reviews and feedback from previous employers
+- Contact information and availability status
+
+### 9) Worker Dashboard (`dashboard-worker.php`) - Worker Operations Center
 Purpose:
 - Centralize worker activity, profile management, and applications
 - Give workers visibility into progress and opportunities
 
 Main content:
-- Profile summary and skill indicators
-- Application history and statuses
-- Personalized metrics and quick actions
+- Profile summary with link to full profile page
+- Skills management (add/remove, proficiency levels)
+- Saved jobs list with quick apply options
+- Application history and status tracking
+- Recommendations and suggested jobs based on profile
+- Notifications and messages integration
 
-### 9) Employer Dashboard (`dashboard-employer.php`) - Employer Operations Center
+### 10) Employer Profile (`employer-profile.php`) - Employer Public Profile
+Purpose:
+- Display employer profile and company information
+- Show job history and worker reviews
+- Build trust and credibility for employers
+
+Main content:
+- Company profile with logo and business information
+- Posted jobs history and current openings
+- Reviews and ratings from workers
+- Trust score and verification status
+- Contact information and response times
+
+### 11) Employer Dashboard (`dashboard-employer.php`) - Employer Operations Center
 Purpose:
 - Centralize employer hiring workflows and posted jobs
 - Support application review and decision-making
 
 Main content:
+- Profile summary with link to full profile page
 - Posted job management (active/paused/reopened)
 - Applicant review and approval/rejection actions
 - Hiring activity summaries and shortcuts
 
-### 10) Admin Dashboard (`dashboard-admin.php`) - Platform Administration
+### 12) Admin Dashboard (`dashboard-admin.php`) - Platform Administration
 Purpose:
 - Monitor platform operations, users, and jobs
 - Support moderation and system-level oversight
@@ -123,35 +154,46 @@ Main content:
 - Operational monitoring panels
 - Admin quick actions for governance and platform health
 
-### 11) Messaging Page (`messages.php`) - In-Platform Communication
+### 13) Messaging Page (`messages.php`) - In-Platform Communication
 Purpose:
-- Enable direct communication between workers and employers
-- Reduce friction in coordination and follow-ups
+- Enable direct messaging between workers and employers
+- Support hiring discussions and coordination
 
 Main content:
-- Conversation list and threaded messages
-- Send/read message flow
-- Unread handling integrated with notifications
+- Conversation list and message threads
+- Real-time messaging interface
+- Message notifications and read status
 
-### 12) Notifications Page (`notifications.php`) - Activity Alerts Center
+### 14) Notifications Page (`notifications.php`) - Alert Management
 Purpose:
-- Keep users updated on key actions and status changes
-- Improve responsiveness across the hiring process
+- Display platform notifications and alerts
+- Help users stay updated on important activities
 
 Main content:
-- Notification feed for applications, messages, and updates
-- Mark one/all notifications as read actions
-- Quick links to related pages and records
+- Notification list with filtering options
+- Mark as read functionality
+- Notification settings with easy access button
 
-### 13) Skill Learn Page (`skill-learn.php`) - Upskilling and Learning Hub
+### 15) Skill Learn Page (`skill-learn.php`) - Learning Hub
 Purpose:
-- Help users improve skills relevant to available jobs
-- Support long-term employability and career growth
+- Provide skill development resources
+- Support upskilling and micro-credentials
 
 Main content:
-- Learning resources (training, courses, workshops, certifications)
-- Filters by type and category
-- Featured learning opportunities with safe outbound links
+- Skill posts and learning resources
+- Filter by type and category
+- Progress tracking and achievement badges
+
+### 16) Terms & Conditions (`terms.php`) - Legal Framework
+Purpose:
+- Provide comprehensive terms and conditions for platform use
+- Ensure legal compliance and user understanding
+
+Main content:
+- Complete terms and conditions document
+- Platform usage policies and guidelines
+- User rights and responsibilities
+- Footer integration for easy access
 
 ---
 

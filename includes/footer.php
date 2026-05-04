@@ -55,7 +55,8 @@
             </div>
 
             <div class="footer-bottom">
-                &copy; <?php echo date('Y'); ?> RaketGo by Moesoft &middot; Job Matching Platform
+                &copy; <?php echo date('Y'); ?> RaketGo by Moesoft &middot; Job Matching Platform &middot; 
+                <a href="terms.php" style="color: var(--primary-blue-dark); text-decoration: underline; font-weight: 500;">Terms & Conditions</a>
             </div>
         </div>
     </footer>

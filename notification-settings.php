@@ -78,12 +78,34 @@ closeDBConnection($conn);
 ?>
 
 <div class="container">
+    <!-- Page Header with Back Button -->
+    <div class="panel" style="margin-bottom: 16px;">
+        <div class="panel-body" style="padding: 1rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div style="display: flex; align-items: center; gap: 1rem;">
+                    <a href="notifications.php" class="btn btn-outline btn-small">
+                        <i class="fas fa-arrow-left"></i> Back to Notifications
+                    </a>
+                    <div>
+                        <h1 style="margin: 0; color: var(--text-dark); font-size: 1.5rem;">
+                            <i class="fas fa-cog" style="color: var(--primary-blue); margin-right: 0.5rem;"></i>
+                            Notification Settings
+                        </h1>
+                        <p style="margin: 0.25rem 0 0 0; color: var(--text-muted); font-size: 0.9rem;">
+                            Customize how and when you receive notifications
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="layout-two-col">
         <div>
             <div class="panel">
                 <div class="section-header">
                     <span class="header-square"></span>
-                    Notification Settings
+                    Notification Preferences
                 </div>
                 <div class="panel-body">
                     <?php if ($success): ?>

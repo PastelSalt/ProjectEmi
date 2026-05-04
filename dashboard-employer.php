@@ -260,11 +260,11 @@ $stats = $statsResult ?: ['total_jobs' => 0, 'active_jobs' => 0, 'total_applicat
     <div class="layout-two-col">
         <!-- Main Content -->
         <div>
-            <!-- Employer Profile Panel -->
+            <!-- Profile Summary Panel -->
             <div class="panel">
                 <div class="section-header section-header-pink">
                     <span class="header-square"></span>
-                    EMPLOYER PROFILE
+                    PROFILE SUMMARY
                 </div>
                 <div class="panel-body">
                     <div class="d-flex align-center gap-2">
@@ -279,150 +279,18 @@ $stats = $statsResult ?: ['total_jobs' => 0, 'active_jobs' => 0, 'total_applicat
                             <h3><?php echo htmlspecialchars($user['full_name']); ?></h3>
                             <p class="text-small text-muted">
                                 <i class="fas fa-map-marker-alt"></i> <?php echo htmlspecialchars($user['city'] . ', ' . $user['province']); ?>
-                                &middot; <i class="fas fa-mobile-alt"></i> <?php echo htmlspecialchars($user['mobile_number']); ?>
-                                <?php if (!empty($user['email'])): ?>
-                                    &middot; <i class="fas fa-envelope"></i> <?php echo htmlspecialchars($user['email']); ?>
+                                &middot; <i class="fas fa-star"></i> Trust Score: <?php echo number_format($user['trust_score'], 2); ?>
+                                <?php if (($user['employer_subtype'] ?? '') === 'company' && !empty($user['company_name'])): ?>
+                                    &middot; <i class="fas fa-building"></i> <?php echo htmlspecialchars($user['company_name']); ?>
                                 <?php endif; ?>
                             </p>
                         </div>
-                    </div>
-
-                    <!-- Profile Picture Upload Form -->
-                    <form method="POST" enctype="multipart/form-data" style="margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border-light);">
-                        <?php echo csrfField(); ?>
-                        <input type="hidden" name="action" value="upload_profile_picture">
-                        <div class="d-flex gap-1 align-center">
-                            <input type="file" name="profile_picture" class="form-control" accept="image/jpeg,image/png,image/webp" style="flex: 1; font-size: 0.85rem;">
-                            <button type="submit" class="btn btn-secondary btn-small">
-                                <i class="fas fa-camera"></i> Update Photo
-                            </button>
-                        </div>
-                        <small class="text-muted">Max 2MB. JPEG, PNG, or WebP.</small>
-                    </form>
-
-                    <!-- Profile Info Edit Form -->
-                    <form method="POST" style="margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border-light);">
-                        <?php echo csrfField(); ?>
-                        <input type="hidden" name="action" value="update_profile_info">
-
-                        <!-- Employer Type -->
-                        <div class="form-group" style="margin-bottom: 12px;">
-                            <label class="text-small" style="display: block; margin-bottom: 6px;">
-                                <strong>Employer Type <span class="text-pink">*</span></strong>
-                            </label>
-                            <div style="display: flex; gap: 12px; flex-wrap: wrap;">
-                                <?php foreach ($EMPLOYER_SUBTYPES as $key => $subtype): ?>
-                                    <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; padding: 8px 12px; border: 1px solid var(--border-light); border-radius: 6px; <?php echo ($user['employer_subtype'] ?? '') === $key ? 'background: var(--primary-blue-light); border-color: var(--primary-blue);' : ''; ?>">
-                                        <input type="radio" name="employer_subtype" value="<?php echo $key; ?>" <?php echo ($user['employer_subtype'] ?? '') === $key ? 'checked' : ''; ?> required>
-                                        <i class="fas <?php echo $subtype['icon']; ?>" style="color: var(--<?php echo $subtype['color']; ?>-dark);"></i>
-                                        <span style="font-size: 0.85rem;"><?php echo $subtype['label']; ?></span>
-                                    </label>
-                                <?php endforeach; ?>
-                            </div>
-                            <small class="text-muted" style="display: block; margin-top: 6px;">
-                                <strong>Company:</strong> Businesses and organizations &middot;
-                                <strong>Individual:</strong> Personal tasks and one-time jobs
-                            </small>
-                        </div>
-
-                        <!-- Bio/Description -->
-                        <div class="form-group" style="margin-bottom: 12px;">
-                            <label for="bio" class="text-small">
-                                <strong>About / Bio</strong> <span class="text-muted">(shown on your public profile)</span>
-                            </label>
-                            <textarea id="bio" name="bio" class="form-control" rows="4" maxlength="500"
-                                      placeholder="Describe your company or what kind of jobs you typically post..."><?php echo htmlspecialchars($user['bio'] ?? ''); ?></textarea>
-                            <small class="text-muted"><span id="bio-char-count"><?php echo strlen($user['bio'] ?? ''); ?></span>/500 characters</small>
-                        </div>
-
-                        <div class="d-flex gap-2 align-center">
-                            <button type="submit" class="btn btn-primary btn-small">
-                                <i class="fas fa-save"></i> Save Profile Info
-                            </button>
-                            <a href="employer-profile.php?id=<?php echo $user_id; ?>" class="btn btn-outline btn-small" target="_blank">
-                                <i class="fas fa-eye"></i> View Public Profile
+                        <div>
+                            <a href="employer-profile.php?id=<?php echo $user_id; ?>" class="btn btn-primary btn-small">
+                                <i class="fas fa-user"></i> View Full Profile
                             </a>
                         </div>
-                    </form>
-
-                    <!-- Company Profile Section (Only for Company type) -->
-                    <?php if (($user['employer_subtype'] ?? '') === 'company'): ?>
-                    <div style="margin-top: 24px; padding-top: 24px; border-top: 2px solid var(--border-light);">
-                        <h4 style="margin-bottom: 16px;"><i class="fas fa-building" style="color: var(--primary-blue);"></i> Company Information</h4>
-
-                        <!-- Company Logo Upload -->
-                        <form method="POST" enctype="multipart/form-data" style="margin-bottom: 16px;">
-                            <?php echo csrfField(); ?>
-                            <input type="hidden" name="action" value="upload_company_logo">
-                            <div class="d-flex gap-2 align-center">
-                                <?php if (!empty($user['company_logo'])): ?>
-                                    <img src="<?php echo htmlspecialchars($user['company_logo']); ?>" alt="Company Logo" style="width: 60px; height: 60px; object-fit: contain; border: 1px solid var(--border-light); border-radius: 4px;">
-                                <?php else: ?>
-                                    <div style="width: 60px; height: 60px; background: var(--gray-lightest); display: flex; align-items: center; justify-content: center; border-radius: 4px;">
-                                        <i class="fas fa-building" style="font-size: 1.5rem; color: var(--gray-mid);"></i>
-                                    </div>
-                                <?php endif; ?>
-                                <input type="file" name="company_logo" class="form-control" accept="image/jpeg,image/png,image/webp" style="flex: 1; font-size: 0.85rem;">
-                                <button type="submit" class="btn btn-secondary btn-small">
-                                    <i class="fas fa-image"></i> Update Logo
-                                </button>
-                            </div>
-                            <small class="text-muted">Max 2MB. JPEG, PNG, or WebP.</small>
-                        </form>
-
-                        <!-- Company Details Form -->
-                        <form method="POST">
-                            <?php echo csrfField(); ?>
-                            <input type="hidden" name="action" value="update_company_profile">
-
-                            <div class="form-group" style="margin-bottom: 12px;">
-                                <label for="company_name" class="text-small"><strong>Company Name</strong></label>
-                                <input type="text" id="company_name" name="company_name" class="form-control"
-                                       value="<?php echo htmlspecialchars($user['company_name'] ?? ''); ?>"
-                                       placeholder="Official company name">
-                            </div>
-
-                            <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
-                                <div class="form-group">
-                                    <label for="company_size" class="text-small"><strong>Company Size</strong></label>
-                                    <select id="company_size" name="company_size" class="form-control">
-                                        <option value="">Select size</option>
-                                        <option value="1-10" <?php echo ($user['company_size'] ?? '') === '1-10' ? 'selected' : ''; ?>>1-10 employees</option>
-                                        <option value="11-50" <?php echo ($user['company_size'] ?? '') === '11-50' ? 'selected' : ''; ?>>11-50 employees</option>
-                                        <option value="51-200" <?php echo ($user['company_size'] ?? '') === '51-200' ? 'selected' : ''; ?>>51-200 employees</option>
-                                        <option value="201-500" <?php echo ($user['company_size'] ?? '') === '201-500' ? 'selected' : ''; ?>>201-500 employees</option>
-                                        <option value="500+" <?php echo ($user['company_size'] ?? '') === '500+' ? 'selected' : ''; ?>>500+ employees</option>
-                                    </select>
-                                </div>
-                                <div class="form-group">
-                                    <label for="year_founded" class="text-small"><strong>Year Founded</strong></label>
-                                    <input type="number" id="year_founded" name="year_founded" class="form-control"
-                                           value="<?php echo htmlspecialchars($user['year_founded'] ?? ''); ?>"
-                                           placeholder="e.g., 2010" min="1800" max="<?php echo date('Y'); ?>">
-                                </div>
-                            </div>
-
-                            <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
-                                <div class="form-group">
-                                    <label for="industry" class="text-small"><strong>Industry</strong></label>
-                                    <input type="text" id="industry" name="industry" class="form-control"
-                                           value="<?php echo htmlspecialchars($user['industry'] ?? ''); ?>"
-                                           placeholder="e.g., Technology, Construction">
-                                </div>
-                                <div class="form-group">
-                                    <label for="company_website" class="text-small"><strong>Company Website</strong></label>
-                                    <input type="url" id="company_website" name="company_website" class="form-control"
-                                           value="<?php echo htmlspecialchars($user['company_website'] ?? ''); ?>"
-                                           placeholder="https://example.com">
-                                </div>
-                            </div>
-
-                            <button type="submit" class="btn btn-primary btn-small">
-                                <i class="fas fa-save"></i> Save Company Info
-                            </button>
-                        </form>
                     </div>
-                    <?php endif; ?>
                 </div>
             </div>
 

@@ -54,6 +54,37 @@ function notifTagClass($type) {
 ?>
 
 <div class="container">
+    <!-- Page Header with Settings -->
+    <div class="panel" style="margin-bottom: 16px;">
+        <div class="panel-body" style="padding: 1rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <h1 style="margin: 0; color: var(--text-dark); font-size: 1.5rem;">
+                        <i class="fas fa-bell" style="color: var(--primary-blue); margin-right: 0.5rem;"></i>
+                        Notifications
+                    </h1>
+                    <p style="margin: 0.25rem 0 0 0; color: var(--text-muted); font-size: 0.9rem;">
+                        Manage your notifications and preferences
+                    </p>
+                </div>
+                <div style="display: flex; gap: 0.5rem;">
+                    <a href="notification-settings.php" class="btn btn-outline">
+                        <i class="fas fa-cog"></i> Notification Settings
+                    </a>
+                    <?php if (!empty($unread)): ?>
+                        <form method="POST" style="display: inline;">
+                            <?php echo csrfField(); ?>
+                            <input type="hidden" name="action" value="mark_all_read">
+                            <button type="submit" class="btn btn-primary btn-small">
+                                <i class="fas fa-check-double"></i> Mark All Read
+                            </button>
+                        </form>
+                    <?php endif; ?>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="layout-two-col">
         <!-- Main Content -->
         <div>
@@ -63,15 +94,6 @@ function notifTagClass($type) {
                 <div class="section-header">
                     <span class="header-square"></span>
                     UNREAD NOTIFICATIONS (<?php echo count($unread); ?>)
-                    <?php if (count($unread) > 0): ?>
-                        <form method="POST" style="margin-left: auto;">
-                            <?php echo csrfField(); ?>
-                            <input type="hidden" name="action" value="mark_all_read">
-                            <button type="submit" class="btn btn-outline btn-small" style="font-size: 0.7rem; border-color: #fff; color: #fff;">
-                                <i class="fas fa-check-double"></i> Mark All Read
-                            </button>
-                        </form>
-                    <?php endif; ?>
                 </div>
                 <div class="panel-body">
                     <?php foreach ($unread as $notif): ?>

@@ -180,11 +180,11 @@ $stats = $statsResult ?: ['total_applications' => 0, 'approved_jobs' => 0, 'comp
     <div class="layout-two-col">
         <!-- Main Content -->
         <div>
-            <!-- Profile Panel -->
+            <!-- Profile Summary Panel -->
             <div class="panel">
                 <div class="section-header">
                     <span class="header-square"></span>
-                    WORKER PROFILE
+                    PROFILE SUMMARY
                 </div>
                 <div class="panel-body">
                     <div class="d-flex align-center gap-2">
@@ -199,30 +199,15 @@ $stats = $statsResult ?: ['total_applications' => 0, 'approved_jobs' => 0, 'comp
                             <h3><?php echo htmlspecialchars($user['full_name']); ?></h3>
                             <p class="text-small text-muted">
                                 <i class="fas fa-map-marker-alt"></i> <?php echo htmlspecialchars($user['city'] . ', ' . $user['province']); ?>
-                                &middot; <i class="fas fa-mobile-alt"></i> <?php echo htmlspecialchars($user['mobile_number']); ?>
-                                <?php if (!empty($user['email'])): ?>
-                                    &middot; <i class="fas fa-envelope"></i> <?php echo htmlspecialchars($user['email']); ?>
-                                <?php endif; ?>
+                                &middot; <i class="fas fa-star"></i> Trust Score: <?php echo number_format($user['trust_score'], 2); ?>
                             </p>
                         </div>
-                        <div style="text-align: center;">
-                            <div class="text-pink" style="font-size: 1.8rem; font-weight: 700;"><?php echo number_format($user['trust_score'], 2); ?></div>
-                            <div class="text-xs text-muted">Trust Score</div>
+                        <div>
+                            <a href="worker-profile.php?id=<?php echo $user['user_id']; ?>" class="btn btn-primary btn-small">
+                                <i class="fas fa-user"></i> View Full Profile
+                            </a>
                         </div>
                     </div>
-
-                    <!-- Profile Picture Upload Form -->
-                    <form method="POST" enctype="multipart/form-data" style="margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border-light);">
-                        <?php echo csrfField(); ?>
-                        <input type="hidden" name="action" value="upload_profile_picture">
-                        <div class="d-flex gap-1 align-center">
-                            <input type="file" name="profile_picture" class="form-control" accept="image/jpeg,image/png,image/webp" style="flex: 1; font-size: 0.85rem;">
-                            <button type="submit" class="btn btn-secondary btn-small">
-                                <i class="fas fa-camera"></i> Update Photo
-                            </button>
-                        </div>
-                        <small class="text-muted">Max 2MB. JPEG, PNG, or WebP.</small>
-                    </form>
                 </div>
             </div>
 

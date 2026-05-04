@@ -13,10 +13,10 @@ if (!defined('DB_PORT')) {
     define('DB_PORT', (int)(getenv('RAKETGO_DB_PORT') ?: 3306));
 }
 if (!defined('DB_USER')) {
-    define('DB_USER', getenv('RAKETGO_DB_USER') ?: 'root');
+    define('DB_USER', getenv('RAKETGO_DB_USER') ?: 'raketgo_user');
 }
 if (!defined('DB_PASS')) {
-    define('DB_PASS', getenv('RAKETGO_DB_PASS') ?: '');
+    define('DB_PASS', getenv('RAKETGO_DB_PASS') ?: 'raketgo_password123');
 }
 if (!defined('DB_NAME')) {
     define('DB_NAME', getenv('RAKETGO_DB_NAME') ?: 'raketgo');
