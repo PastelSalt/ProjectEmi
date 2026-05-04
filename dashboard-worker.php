@@ -6,20 +6,23 @@
  */
 $page_title = 'My Dashboard';
 require_once 'config/config.php';
-requireUserType('worker');
+require_once 'config/DatabaseHelper.php';
+require_once 'config/ErrorHandler.php';
+require_once 'config/AuthHelper.php';
+
+AuthHelper::requireUserType('worker');
 require_once 'includes/header.php';
 
 $conn = getDBConnection();
-$user_id = getCurrentUserId();
-
-$success = '';
-$error = '';
+$db = new DatabaseHelper($conn);
+$handler = new ErrorHandler();
+$user_id = AuthHelper::getCurrentUserId();
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $action = $_POST['action'] ?? '';
 
-    if (!verifyCsrfToken($_POST['csrf_token'] ?? '')) {
-        $error = 'Invalid request. Please refresh the page and try again.';
+    if (!$handler->validateCsrf($_POST['csrf_token'] ?? '')) {
+        $handler->addError('Invalid request. Please refresh the page and try again.');
     } elseif ($action == 'update_profile') {
         $payment_method = sanitizeInput($_POST['payment_method'] ?? '');
         $payment_details = sanitizeInput($_POST['payment_details'] ?? '');
@@ -27,9 +30,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
         $updateSql = "UPDATE users SET payment_method = ?, payment_details = ?, social_links = ? WHERE user_id = ?";
         if (executeQuery($conn, $updateSql, [$payment_method, $payment_details, $social_links, $user_id], 'sssi')) {
-            $success = 'Profile updated successfully!';
+            $handler->addSuccess('Profile updated successfully!');
         } else {
-            $error = 'Failed to update profile.';
+            $handler->addError('Failed to update profile. Please try again.');
         }
     } elseif ($action == 'add_skill') {
         $skill_name = sanitizeInput($_POST['skill_name'] ?? '');
@@ -40,18 +43,24 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         }
 
         if (!empty($skill_name) && strlen($skill_name) <= 100) {
-            $exists = fetchOne($conn, "SELECT skill_id FROM user_skills WHERE user_id = ? AND skill_name = ?", [$user_id, $skill_name], 'is');
-            if ($exists) {
-                $error = 'You already have this skill.';
+            if ($db->addUserSkill($user_id, $skill_name, $proficiency)) {
+                $handler->addSuccess('Skill added successfully!');
             } else {
-                if (executeQuery($conn, "INSERT INTO user_skills (user_id, skill_name, proficiency_level) VALUES (?, ?, ?)", [$user_id, $skill_name, $proficiency], 'iss')) {
-                    $success = 'Skill added!';
-                } else {
-                    $error = 'Failed to add skill.';
-                }
+                $handler->addError('Failed to add skill. Please try again.');
             }
-        } elseif (!empty($skill_name)) {
-            $error = 'Skill name is too long.';
+        } else {
+            $handler->addError('Please provide a valid skill name (max 100 characters).');
+        }
+    } elseif ($action == 'remove_skill') {
+        $skill_name = sanitizeInput($_POST['skill_name'] ?? '');
+        if (!empty($skill_name)) {
+            if ($db->removeUserSkill($user_id, $skill_name)) {
+                $handler->addSuccess('Skill removed successfully!');
+            } else {
+                $handler->addError('Failed to remove skill. Please try again.');
+            }
+        } else {
+            $handler->addError('Invalid skill name.');
         }
     } elseif ($action == 'delete_skill') {
         $skill_id = (int)($_POST['skill_id'] ?? 0);
@@ -146,12 +155,8 @@ $stats = $statsResult ?: ['total_applications' => 0, 'approved_jobs' => 0, 'comp
 ?>
 
 <div class="container">
-    <?php if ($success): ?>
-        <div class="alert alert-success"><i class="fas fa-check-circle"></i> <?php echo htmlspecialchars($success); ?></div>
-    <?php endif; ?>
-    <?php if ($error): ?>
-        <div class="alert alert-error"><i class="fas fa-exclamation-circle"></i> <?php echo htmlspecialchars($error); ?></div>
-    <?php endif; ?>
+    <?php echo $handler->renderSuccesses(); ?>
+    <?php echo $handler->renderErrors(); ?>
 
     <!-- Stats Row -->
     <div class="stats-grid">

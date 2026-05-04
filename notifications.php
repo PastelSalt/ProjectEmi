@@ -43,7 +43,7 @@ function notifIcon($type) {
     };
 }
 function notifTagClass($type) {
-    return match($type) {
+    return match($type ?? 'default') {
         'new_application' => 'tag-blue',
         'application_status' => 'tag-pink',
         'new_message' => 'tag-green',
@@ -104,7 +104,7 @@ function notifTagClass($type) {
                             <div style="flex: 1; min-width: 0;">
                                 <div style="display: flex; justify-content: space-between; align-items: center;">
                                     <strong style="font-size: 0.85rem;"><?php echo htmlspecialchars($notif['title']); ?></strong>
-                                    <span class="tag <?php echo notifTagClass($notif['notification_type']); ?>" style="font-size: 0.6rem;"><?php echo str_replace('_', ' ', $notif['notification_type']); ?></span>
+                                    <span class="tag <?php echo notifTagClass($notif['notification_type']); ?>" style="font-size: 0.6rem;"><?php echo str_replace('_', ' ', $notif['notification_type'] ?? ''); ?></span>
                                 </div>
                                 <div style="font-size: 0.8rem; color: var(--text-dark); margin-top: 2px;"><?php echo htmlspecialchars($notif['message']); ?></div>
                                 <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 3px;">

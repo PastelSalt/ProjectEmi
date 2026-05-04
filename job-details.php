@@ -6,45 +6,49 @@
  */
 $page_title = 'Job Details';
 require_once 'config/config.php';
-require_once 'includes/header.php';
+require_once 'config/DatabaseHelper.php';
+require_once 'config/ErrorHandler.php';
+require_once 'config/AuthHelper.php';
 
 $conn = getDBConnection();
+$db = new DatabaseHelper($conn);
+$handler = new ErrorHandler();
+
 $job_id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 
 if ($job_id == 0) {
-    redirect('index.php');
+    AuthHelper::redirect('index.php');
 }
 
-$success = '';
-$error = '';
+// Get job details (validate job exists before including header)
+$job = $db->getJobWithEmployer($job_id);
+
+if (!$job) { AuthHelper::redirect('index.php'); }
+
+require_once 'includes/header.php';
 
 // Handle job application submission
-if ($_SERVER['REQUEST_METHOD'] == 'POST' && isLoggedIn() && getCurrentUserType() == 'worker') {
-    if (!verifyCsrfToken($_POST['csrf_token'] ?? '')) {
-        $error = 'Invalid request. Please refresh the page and try again.';
+if ($_SERVER['REQUEST_METHOD'] == 'POST' && AuthHelper::isLoggedIn() && AuthHelper::getCurrentUserType() == 'worker') {
+    if (!$handler->validateCsrf($_POST['csrf_token'] ?? '')) {
+        $handler->addError('Invalid request. Please refresh the page and try again.');
     } else {
         $action = $_POST['action'] ?? '';
-        $user_id = getCurrentUserId();
+        $user_id = AuthHelper::getCurrentUserId();
 
         if ($action == 'save_job') {
-            $existingSave = fetchOne(
-                $conn,
-                "SELECT interaction_id FROM user_interactions WHERE user_id = ? AND job_id = ? AND interaction_type = 'save' LIMIT 1",
-                [$user_id, $job_id],
-                'ii'
-            );
+            $existingSave = $db->getUserJobInteraction($user_id, $job_id, 'save');
             if ($existingSave) {
-                $success = 'This job is already in your saved list.';
-            } elseif (executeQuery($conn, "INSERT INTO user_interactions (user_id, interaction_type, job_id) VALUES (?, 'save', ?)", [$user_id, $job_id], 'ii')) {
-                $success = 'Job saved to your list.';
+                $handler->addSuccess('This job is already in your saved list.');
+            } elseif ($db->createUserJobInteraction($user_id, $job_id, 'save')) {
+                $handler->addSuccess('Job saved to your list.');
             } else {
-                $error = 'Failed to save job. Please try again.';
+                $handler->addError('Failed to save job. Please try again.');
             }
         } elseif ($action == 'unsave_job') {
             if (executeQuery($conn, "DELETE FROM user_interactions WHERE user_id = ? AND job_id = ? AND interaction_type = 'save'", [$user_id, $job_id], 'ii')) {
-                $success = 'Job removed from saved list.';
+                $handler->addSuccess('Job removed from saved list.');
             } else {
-                $error = 'Failed to update saved jobs.';
+                $handler->addError('Failed to update saved jobs.');
             }
         } elseif ($action == 'withdraw') {
             $withdrawStmt = executeQuery(
@@ -65,9 +69,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isLoggedIn() && getCurrentUserType()
                         'iis'
                     );
                 }
-                $success = 'Application withdrawn successfully.';
+                $handler->addSuccess('Application withdrawn successfully.');
             } else {
-                $error = 'Only pending applications can be withdrawn.';
+                $handler->addError('Failed to withdraw application or application not in pending status.');
             }
         } elseif ($action == 'confirm_work_complete') {
             // Get application data including job type for rating availability calculation
@@ -82,7 +86,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isLoggedIn() && getCurrentUserType()
             );
 
             if (!$appData) {
-                $error = 'Application not found or not approved.';
+                $handler->addError('Application not found or not approved.');
             } else {
                 beginTransaction($conn);
                 try {
@@ -381,12 +385,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isLoggedIn() && getCurrentUserType()
     }
 }
 
-// Get job details
-$jobSql = "SELECT j.*, u.full_name as employer_name, u.mobile_number as employer_phone, u.email as employer_email, u.region, u.province
-           FROM job_posts j JOIN users u ON j.employer_id = u.user_id WHERE j.job_id = ?";
-$job = fetchOne($conn, $jobSql, [$job_id], 'i');
-
-if (!$job) { redirect('index.php'); }
+// Job details already fetched above
 
 // Check if current user has applied
 $hasApplied = false;
@@ -426,12 +425,8 @@ if (isLoggedIn()) {
 ?>
 
 <div class="container">
-    <?php if ($success): ?>
-        <div class="alert alert-success"><i class="fas fa-check-circle"></i> <?php echo htmlspecialchars($success); ?></div>
-    <?php endif; ?>
-    <?php if ($error): ?>
-        <div class="alert alert-error"><i class="fas fa-exclamation-circle"></i> <?php echo htmlspecialchars($error); ?></div>
-    <?php endif; ?>
+    <?php echo $handler->renderSuccesses(); ?>
+    <?php echo $handler->renderErrors(); ?>
 
     <!-- Job Title Header -->
     <div class="panel">
@@ -446,6 +441,11 @@ if (isLoggedIn()) {
                     <a href="employer-profile.php?id=<?php echo $job['employer_id']; ?>" style="color: var(--primary-blue-dark); text-decoration: none; font-weight: 500;">
                         <?php echo htmlspecialchars($job['employer_name']); ?>
                     </a>
+                    <?php if (isLoggedIn() && getCurrentUserType() == 'worker' && getCurrentUserId() != $job['employer_id']): ?>
+                        <a href="messages.php?user=<?php echo $job['employer_id']; ?>" class="btn btn-primary btn-small" style="margin-left: 0.5rem;">
+                            <i class="fas fa-envelope"></i> Message
+                        </a>
+                    <?php endif; ?>
                     <a href="employer-profile.php?id=<?php echo $job['employer_id']; ?>" style="font-size: 0.7rem; color: var(--text-muted); margin-left: 4px;">
                         <i class="fas fa-external-link-alt"></i> View Profile
                     </a>
@@ -518,10 +518,10 @@ if (isLoggedIn()) {
                 </div>
                 <div class="panel-body">
                     <table class="data-table" style="font-size: 0.82rem;">
-                        <?php if ($job['start_date']): ?>
+                        <?php if (!empty($job['start_date'])): ?>
                             <tr><td class="text-muted">Start Date</td><td><?php echo date('F d, Y', strtotime($job['start_date'])); ?></td></tr>
                         <?php endif; ?>
-                        <?php if ($job['end_date']): ?>
+                        <?php if (!empty($job['end_date'])): ?>
                             <tr><td class="text-muted">End Date</td><td><?php echo date('F d, Y', strtotime($job['end_date'])); ?></td></tr>
                         <?php endif; ?>
                         <tr><td class="text-muted">Available Slots</td><td><?php echo ($job['slots_available'] - $job['slots_filled']) . ' / ' . $job['slots_available']; ?></td></tr>
@@ -829,7 +829,7 @@ if (isLoggedIn()) {
                         <?php echo formatCurrency($job['pay_amount']); ?>
                     </div>
                     <div class="text-muted" style="font-size: 0.8rem;">per <?php echo $job['pay_type']; ?></div>
-                    <?php if ($job['advance_payment_amount'] > 0): ?>
+                    <?php if (!empty($job['advance_payment_amount']) && $job['advance_payment_amount'] > 0): ?>
                         <div style="margin-top: 0.6rem; padding: 0.5rem; background: var(--off-white); border-radius: 4px; font-size: 0.8rem;">
                             <strong>Advance:</strong> <?php echo formatCurrency($job['advance_payment_amount']); ?>
                         </div>

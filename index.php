@@ -49,8 +49,14 @@ $params = [];
 $types = '';
 
 if (!empty($location_region)) {
+    // Convert region code to region name for database compatibility
+    global $PHILIPPINES_REGIONS;
+    $regionName = isset($PHILIPPINES_REGIONS[$location_region]) ? 
+                   str_replace('National Capital Region', 'Metro Manila', $PHILIPPINES_REGIONS[$location_region]) : 
+                   $location_region;
+    
     $fromWhereSql .= " AND j.location_region = ?";
-    $params[] = $location_region;
+    $params[] = $regionName;
     $types .= 's';
 }
 
@@ -141,13 +147,19 @@ $regionCounts = array_fill_keys(array_keys($PHILIPPINES_REGIONS), 0);
 $regionCountRows = fetchAll(
     $conn,
     "SELECT location_region, COUNT(*) as total
-     FROM job_posts
-     WHERE job_status = 'active' AND location_region IS NOT NULL AND location_region != ''
+     FROM job_posts 
+     WHERE job_status = 'active'
      GROUP BY location_region"
 );
 foreach ($regionCountRows as $rc) {
-    if (isset($regionCounts[$rc['location_region']])) {
-        $regionCounts[$rc['location_region']] = (int)$rc['total'];
+    $dbRegionName = $rc['location_region'];
+    // Find the corresponding region code for this database region name
+    foreach ($PHILIPPINES_REGIONS as $code => $name) {
+        $convertedName = str_replace('National Capital Region', 'Metro Manila', $name);
+        if ($convertedName === $dbRegionName) {
+            $regionCounts[$code] = (int)$rc['total'];
+            break;
+        }
     }
 }
 

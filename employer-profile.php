@@ -10,7 +10,6 @@
 
 $page_title = 'Employer Profile';
 require_once 'config/config.php';
-require_once 'includes/header.php';
 
 $conn = getDBConnection();
 
@@ -25,7 +24,7 @@ if ($employer_id <= 0) {
 // Fetch employer details
 $employer = fetchOne($conn,
     "SELECT user_id, full_name, user_type, employer_subtype, bio, profile_picture, 
-            region, province, city, trust_score, is_verified, created_at
+            region, province, city, trust_score, created_at
      FROM users 
      WHERE user_id = ? AND user_type = 'employer' AND account_status = 'active'",
     [$employer_id], 'i'
@@ -35,6 +34,8 @@ if (!$employer) {
     header('Location: index.php');
     exit;
 }
+
+require_once 'includes/header.php';
 
 // Get employer type label
 $employerTypeConfig = [
@@ -130,11 +131,7 @@ $isOwnProfile = ($currentUserId == $employer_id);
                             <?php echo mb_strtoupper(mb_substr($employer['full_name'], 0, 1, 'UTF-8'), 'UTF-8'); ?>
                         </div>
                     <?php endif; ?>
-                    <?php if ($employer['is_verified']): ?>
-                        <span style="position: absolute; bottom: 0; right: 0; background: var(--success-green); color: white; border-radius: 50%; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; border: 2px solid white;">
-                            <i class="fas fa-check"></i>
-                        </span>
-                    <?php endif; ?>
+                    <?php // Verification badge removed - is_verified field doesn't exist ?>
                 </div>
 
                 <!-- Profile Info -->
@@ -145,11 +142,7 @@ $isOwnProfile = ($currentUserId == $employer_id);
                             <i class="fas <?php echo $typeInfo['icon']; ?>"></i>
                             <?php echo $typeInfo['label']; ?>
                         </span>
-                        <?php if ($employer['is_verified']): ?>
-                            <span class="tag tag-green" style="font-size: 0.75rem;">
-                                <i class="fas fa-shield-alt"></i> Verified
-                            </span>
-                        <?php endif; ?>
+                        <?php // Verification tag removed - is_verified field doesn't exist ?>
                     </div>
 
                     <div class="d-flex gap-3 flex-wrap text-small text-muted" style="margin-bottom: 8px;">

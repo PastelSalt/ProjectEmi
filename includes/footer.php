@@ -2,7 +2,7 @@
     
     <footer class="footer">
         <div class="container">
-            <div class="footer-main footer-main-compact">
+            <div class="footer-main">
                 <!-- Brand Column -->
                 <div class="footer-brand">
                     <div class="brand-name">
@@ -56,7 +56,7 @@
 
             <div class="footer-bottom">
                 &copy; <?php echo date('Y'); ?> RaketGo by Moesoft &middot; Job Matching Platform &middot; 
-                <a href="terms.php" style="color: var(--primary-blue-dark); text-decoration: underline; font-weight: 500;">Terms & Conditions</a>
+                <a href="terms.php">Terms & Conditions</a>
             </div>
         </div>
     </footer>

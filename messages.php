@@ -45,6 +45,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
+// Handle user search
+$search_query = isset($_GET['search']) ? sanitizeInput($_GET['search']) : '';
+$search_results = [];
+
+if (!empty($search_query)) {
+    $searchSql = "SELECT user_id, full_name, user_type, profile_picture, account_status 
+                   FROM users 
+                   WHERE (full_name LIKE ? OR user_type LIKE ?) 
+                   AND user_id != ? AND account_status = 'active'
+                   ORDER BY full_name LIMIT 20";
+    $search_param = "%{$search_query}%";
+    $search_results = fetchAll($conn, $searchSql, [$search_param, $search_param, $user_id], 'ssi');
+}
+
 // Get all conversations
 $conversationsSql = "SELECT DISTINCT
                      CASE WHEN sender_id = ? THEN receiver_id ELSE sender_id END as contact_id,
@@ -85,10 +99,80 @@ if ($conversation_user_id > 0) {
 ?>
 
 <div class="container">
+    <div class="messages-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+        <h1 style="margin: 0; color: var(--dark-charcoal); font-size: 1.5rem;">
+            <i class="fas fa-comments" style="margin-right: 0.5rem; color: var(--sana-red);"></i>
+            Messages
+        </h1>
+        <button onclick="document.querySelector('.messages-search-section').scrollIntoView({behavior: 'smooth'})" 
+                class="btn btn-primary">
+            <i class="fas fa-user-plus"></i> New Message
+        </button>
+    </div>
     <div class="messages-layout">
         <!-- Conversations List -->
         <div class="panel messages-conversations-panel">
-            <div class="section-header">
+            <!-- Search Users -->
+            <div class="messages-search-section">
+                <div class="section-header">
+                    <span class="header-square"></span>
+                    FIND PEOPLE
+                </div>
+                <div class="messages-search-form">
+                    <form method="GET" action="messages.php">
+                        <div class="input-group" style="display: flex; gap: 8px;">
+                            <input type="text" name="search" class="form-control" placeholder="Search by name or user type..." value="<?php echo htmlspecialchars($search_query); ?>" style="flex: 1;">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-search"></i>
+                            </button>
+                            <?php if (!empty($search_query)): ?>
+                                <a href="messages.php" class="btn btn-outline">
+                                    <i class="fas fa-times"></i>
+                                </a>
+                            <?php endif; ?>
+                        </div>
+                    </form>
+                </div>
+                
+                <?php if (!empty($search_query)): ?>
+                    <div class="messages-search-results">
+                        <?php if (empty($search_results)): ?>
+                            <div class="text-center text-muted" style="padding: 1rem; font-size: 0.85rem;">
+                                <i class="fas fa-search" style="display: block; margin-bottom: 0.5rem;"></i>
+                                No users found for "<?php echo htmlspecialchars($search_query); ?>"
+                            </div>
+                        <?php else: ?>
+                            <div class="search-results-header" style="padding: 0.5rem 0.8rem; font-size: 0.75rem; color: var(--text-muted); border-bottom: 1px solid var(--border-light);">
+                                Found <?php echo count($search_results); ?> user(s)
+                            </div>
+                            <?php foreach ($search_results as $user): ?>
+                                <div class="search-result-item" style="display: flex; align-items: center; gap: 0.6rem; padding: 0.7rem 0.8rem; border-bottom: 1px solid var(--border-light);">
+                                    <?php if (!empty($user['profile_picture'])): ?>
+                                        <img src="<?php echo htmlspecialchars($user['profile_picture']); ?>" alt="" style="width: 36px; height: 36px; border-radius: 50%; object-fit: cover; flex-shrink: 0;">
+                                    <?php else: ?>
+                                        <div style="width: 36px; height: 36px; border-radius: 50%; background: var(--sana-red); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.85rem; flex-shrink: 0;">
+                                            <?php echo mb_strtoupper(mb_substr($user['full_name'], 0, 1, 'UTF-8'), 'UTF-8'); ?>
+                                        </div>
+                                    <?php endif; ?>
+                                    <div style="flex: 1; min-width: 0;">
+                                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                                            <strong style="font-size: 0.82rem;"><?php echo htmlspecialchars($user['full_name']); ?></strong>
+                                            <span class="tag tag-<?php echo $user['user_type'] == 'worker' ? 'pink' : 'blue'; ?>" style="font-size: 0.6rem;"><?php echo ucfirst($user['user_type']); ?></span>
+                                        </div>
+                                        <div style="font-size: 0.72rem; color: var(--text-muted);">
+                                            <?php echo ucfirst($user['user_type']); ?> • Click to message
+                                        </div>
+                                    </div>
+                                    <a href="messages.php?user=<?php echo $user['user_id']; ?>" class="btn btn-primary btn-sm" style="text-decoration: none;">
+                                        <i class="fas fa-comment"></i> Message
+                                    </a>
+                                </div>
+                            <?php endforeach; ?>
+                        <?php endif; ?>
+                    </div>
+                <?php endif; ?>
+            </div>
+            <div class="section-header" style="margin-top: <?php echo !empty($search_query) ? '1rem' : '0'; ?>;">
                 <span class="header-square"></span>
                 CONVERSATIONS
             </div>
@@ -202,6 +286,81 @@ if ($conversation_user_id > 0) {
 document.addEventListener('DOMContentLoaded', function() {
     var chat = document.getElementById('chat-messages');
     if (chat) chat.scrollTop = chat.scrollHeight;
+    
+    // Enhanced search functionality
+    var searchInput = document.querySelector('input[name="search"]');
+    var searchForm = document.querySelector('.messages-search-form form');
+    
+    if (searchInput && searchForm) {
+        // Add real-time search with debounce
+        var searchTimeout;
+        searchInput.addEventListener('input', function(e) {
+            clearTimeout(searchTimeout);
+            var query = e.target.value.trim();
+            
+            searchTimeout = setTimeout(function() {
+                if (query.length >= 2 || query.length === 0) {
+                    // Update URL without page reload for better UX
+                    var url = new URL(window.location);
+                    if (query) {
+                        url.searchParams.set('search', query);
+                    } else {
+                        url.searchParams.delete('search');
+                    }
+                    url.searchParams.delete('user'); // Clear conversation when searching
+                    window.location.href = url.toString();
+                }
+            }, 300);
+        });
+        
+        // Add clear search on ESC key
+        searchInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                window.location.href = 'messages.php';
+            }
+        });
+    }
+    
+    // Add click handlers for search results
+    var searchResults = document.querySelectorAll('.search-result-item');
+    searchResults.forEach(function(item) {
+        item.addEventListener('click', function(e) {
+            if (!e.target.closest('a')) {
+                var link = item.querySelector('a[href*="messages.php?user="]');
+                if (link) {
+                    window.location.href = link.href;
+                }
+            }
+        });
+    });
+    
+    // Auto-scroll to latest message
+    if (chat) {
+        // Smooth scroll to bottom
+        chat.scrollTo({
+            top: chat.scrollHeight,
+            behavior: 'smooth'
+        });
+    }
+    
+    // Add message sending feedback
+    var messageForm = document.querySelector('.messages-compose-form');
+    if (messageForm) {
+        messageForm.addEventListener('submit', function(e) {
+            var submitBtn = messageForm.querySelector('button[type="submit"]');
+            var originalText = submitBtn.innerHTML;
+            
+            // Show sending state
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
+            submitBtn.disabled = true;
+            
+            // Reset after 2 seconds (in case of issues)
+            setTimeout(function() {
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+            }, 2000);
+        });
+    }
 });
 </script>
 

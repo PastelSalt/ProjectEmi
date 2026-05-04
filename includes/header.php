@@ -78,32 +78,18 @@ if (isLoggedIn()) {
                         <i class="fas fa-compass nav-item-icon" aria-hidden="true"></i>
                         <span>Discover</span>
                     </a>
+                    <a href="raketko-feed.php" class="nav-link <?php echo $current_page == 'raketko-feed' || $current_page == 'raketko-profile' ? 'active' : ''; ?>">
+                        <i class="fas fa-users nav-item-icon" aria-hidden="true"></i>
+                        <span>RaketKo</span>
+                    </a>
                     <a href="skill-learn.php" class="nav-link <?php echo $current_page == 'skill-learn' ? 'active' : ''; ?>">
                         <i class="fas fa-graduation-cap nav-item-icon" aria-hidden="true"></i>
                         <span>Learn</span>
                     </a>
-                    
-                    <!-- Role-specific primary action -->
-                    <?php if (getCurrentUserType() == 'worker'): ?>
-                        <a href="jobs.php" class="nav-link <?php echo $current_page == 'jobs' ? 'active' : ''; ?>">
-                            <i class="fas fa-briefcase nav-item-icon" aria-hidden="true"></i>
-                            <span>Find Jobs</span>
-                        </a>
-                    <?php elseif (getCurrentUserType() == 'employer'): ?>
-                        <a href="dashboard-employer.php" class="nav-link <?php echo $current_page == 'dashboard-employer' ? 'active' : ''; ?>">
-                            <i class="fas fa-briefcase nav-item-icon" aria-hidden="true"></i>
-                            <span>My Jobs</span>
-                        </a>
-                    <?php elseif (getCurrentUserType() == 'admin'): ?>
-                        <a href="dashboard-admin.php" class="nav-link <?php echo $current_page == 'dashboard-admin' ? 'active' : ''; ?>">
-                            <i class="fas fa-shield-halved nav-item-icon" aria-hidden="true"></i>
-                            <span>Admin</span>
-                        </a>
-                    <?php endif; ?>
                 <?php else: ?>
-                    <a href="jobs.php" class="nav-link <?php echo $current_page == 'jobs' ? 'active' : ''; ?>">
-                        <i class="fas fa-briefcase nav-item-icon" aria-hidden="true"></i>
-                        <span>Browse Jobs</span>
+                    <a href="raketko-feed.php" class="nav-link <?php echo $current_page == 'raketko-feed' || $current_page == 'raketko-profile' ? 'active' : ''; ?>">
+                        <i class="fas fa-users nav-item-icon" aria-hidden="true"></i>
+                        <span>RaketKo</span>
                     </a>
                     <a href="skill-learn.php" class="nav-link <?php echo $current_page == 'skill-learn' ? 'active' : ''; ?>">
                         <i class="fas fa-graduation-cap nav-item-icon" aria-hidden="true"></i>
