@@ -3,6 +3,7 @@
 -- Complete Job Matching + Social Media Platform
 -- Created and managed by Moesoft (Moeko Software)
 -- Last Updated: May 2026
+-- NOTE: Compatible with MySQL 5.x / WAMP (DESC index syntax removed)
 -- =================================================================
 
 CREATE DATABASE raketgo;
@@ -66,18 +67,18 @@ CREATE TABLE users (
     user_type ENUM('admin', 'employer', 'worker') NOT NULL,
     employer_subtype ENUM('company', 'individual') DEFAULT NULL,
     full_name VARCHAR(100) NOT NULL,
-    profile_picture VARCHAR(255),
-    region VARCHAR(100) NOT NULL,
-    province VARCHAR(100) NOT NULL,
-    city VARCHAR(100) NOT NULL,
+    profile_picture VARCHAR(191),
+    region VARCHAR(50) NOT NULL,
+    province VARCHAR(50) NOT NULL,
+    city VARCHAR(50) NOT NULL,
     social_links TEXT,
     bio TEXT,
     trust_score DECIMAL(3,2) DEFAULT 0.00,
     current_balance DECIMAL(10,2) DEFAULT 0.00,
-    payment_method VARCHAR(255),
-    company_logo VARCHAR(255),
-    company_name VARCHAR(255),
-    company_website VARCHAR(500),
+    payment_method VARCHAR(191),
+    company_logo VARCHAR(191),
+    company_name VARCHAR(191),
+    company_website VARCHAR(191),
     company_description TEXT,
     company_industry VARCHAR(100),
     company_size VARCHAR(50),
@@ -85,10 +86,10 @@ CREATE TABLE users (
     -- Social media integration fields
     social_profile_id INT NULL,
     social_bio TEXT NULL,
-    social_headline VARCHAR(255) NULL,
-    social_location VARCHAR(255) NULL,
-    social_website VARCHAR(500) NULL,
-    social_linkedin_url VARCHAR(500) NULL,
+    social_headline VARCHAR(191) NULL,
+    social_location VARCHAR(191) NULL,
+    social_website VARCHAR(191) NULL,
+    social_linkedin_url VARCHAR(191) NULL,
     social_skills JSON NULL,
     social_interests JSON NULL,
     social_followers_count INT DEFAULT 0,
@@ -107,7 +108,7 @@ CREATE TABLE users (
     last_login TIMESTAMP NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    
+
     INDEX idx_mobile (mobile_number),
     INDEX idx_email (email),
     INDEX idx_user_type (user_type),
@@ -127,10 +128,10 @@ CREATE TABLE social_profiles (
     profile_id INT PRIMARY KEY AUTO_INCREMENT,
     user_id INT NOT NULL UNIQUE,
     bio TEXT,
-    headline VARCHAR(255),
-    location VARCHAR(255),
-    website VARCHAR(500),
-    linkedin_url VARCHAR(500),
+    headline VARCHAR(191),
+    location VARCHAR(191),
+    website VARCHAR(191),
+    linkedin_url VARCHAR(191),
     skills JSON,
     interests JSON,
     experience JSON,
@@ -146,21 +147,22 @@ CREATE TABLE social_profiles (
     -- Integration with RaketGo
     raketgo_profile_sync BOOLEAN DEFAULT TRUE,
     job_seeking_status ENUM('active', 'passive', 'not_seeking') DEFAULT 'passive',
-    current_job_title VARCHAR(255) NULL,
-    current_company VARCHAR(255) NULL,
+    current_job_title VARCHAR(191) NULL,
+    current_company VARCHAR(191) NULL,
     career_goals TEXT NULL,
     industry_focus JSON NULL,
     work_preference ENUM('remote', 'onsite', 'hybrid', 'flexible') NULL,
     salary_expectation_min DECIMAL(10,2) NULL,
     salary_expectation_max DECIMAL(10,2) NULL,
     availability_status ENUM('immediately', '2_weeks', '1_month', '3_months', 'not_available') NULL,
-    cover_photo VARCHAR(255),
+    cover_photo VARCHAR(191),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    
+
     FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
     INDEX idx_verification (is_verified, verification_badge),
-    INDEX idx_followers_count (followers_count DESC),
+    INDEX idx_followers_count (followers_count),
+
     INDEX idx_job_seeking (job_seeking_status, availability_status)
 );
 
@@ -169,7 +171,7 @@ CREATE TABLE social_posts (
     post_id INT PRIMARY KEY AUTO_INCREMENT,
     user_id INT NOT NULL,
     post_type ENUM('career_update', 'achievement', 'insight', 'job_posting', 'company_news', 'professional_tip', 'industry_news', 'question') NOT NULL,
-    title VARCHAR(255) NOT NULL,
+    title VARCHAR(191) NOT NULL,
     content TEXT NOT NULL,
     media_urls JSON,
     hashtags JSON,
@@ -183,13 +185,12 @@ CREATE TABLE social_posts (
     views_count INT DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    
+
     FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
     INDEX idx_user_posts (user_id, created_at),
     INDEX idx_post_type (post_type, created_at),
     INDEX idx_visibility (visibility, created_at),
     INDEX idx_featured (is_featured, created_at),
-    INDEX idx_hashtags (hashtags(255)),
     FULLTEXT idx_content_search (title, content)
 );
 
@@ -298,7 +299,7 @@ CREATE TABLE social_notifications (
 CREATE TABLE trending_topics (
     topic_id INT PRIMARY KEY AUTO_INCREMENT,
     hashtag VARCHAR(100) NOT NULL UNIQUE,
-    display_name VARCHAR(255),
+    display_name VARCHAR(191),
     description TEXT,
     category VARCHAR(50),
     usage_count INT DEFAULT 0,
@@ -307,10 +308,12 @@ CREATE TABLE trending_topics (
     last_trending_at TIMESTAMP NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    
+
     INDEX idx_hashtag (hashtag),
-    INDEX idx_trending (is_trending, trending_score DESC),
-    INDEX idx_category (category, usage_count DESC)
+    INDEX idx_trending (is_trending, trending_score),
+
+    INDEX idx_category (category, usage_count)
+
 );
 
 -- Post Hashtag Relationships
@@ -359,8 +362,8 @@ CREATE TABLE user_activity_feed (
     
     FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
     FOREIGN KEY (actor_id) REFERENCES users(user_id) ON DELETE CASCADE,
-    INDEX idx_user_feed (user_id, created_at DESC),
-    INDEX idx_activity_type (activity_type, created_at DESC)
+    INDEX idx_user_feed (user_id, created_at),
+    INDEX idx_activity_type (activity_type, created_at)
 );
 
 -- Social Analytics Table
@@ -380,8 +383,10 @@ CREATE TABLE social_analytics (
     
     FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
     UNIQUE KEY unique_user_analytics (user_id, date),
-    INDEX idx_date_analytics (date DESC),
-    INDEX idx_user_analytics_date (user_id, date DESC)
+    INDEX idx_date_analytics (date),
+
+    INDEX idx_user_analytics_date (user_id, date)
+
 );
 
 -- =================================================================
@@ -412,7 +417,7 @@ CREATE TABLE user_skills (
 CREATE TABLE job_posts (
     job_id INT PRIMARY KEY AUTO_INCREMENT,
     employer_id INT NOT NULL,
-    job_title VARCHAR(255) NOT NULL,
+    job_title VARCHAR(191) NOT NULL,
     job_description TEXT NOT NULL,
     job_requirements TEXT,
     job_category VARCHAR(100) NOT NULL,
@@ -420,9 +425,9 @@ CREATE TABLE job_posts (
     pay_type ENUM('hourly', 'daily', 'fixed', 'monthly', 'commission') NOT NULL,
     pay_amount DECIMAL(10,2) NOT NULL,
     pay_currency VARCHAR(3) DEFAULT 'PHP',
-    location_region VARCHAR(100) NOT NULL,
-    location_province VARCHAR(100) NOT NULL,
-    location_city VARCHAR(100) NOT NULL,
+    location_region VARCHAR(50) NOT NULL,
+    location_province VARCHAR(50) NOT NULL,
+    location_city VARCHAR(50) NOT NULL,
     location_remote_policy ENUM('on_site', 'hybrid', 'fully_remote') DEFAULT 'on_site',
     slots_available INT NOT NULL DEFAULT 1,
     slots_filled INT NOT NULL DEFAULT 0,
@@ -441,7 +446,7 @@ CREATE TABLE job_posts (
     applications_count INT DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    
+
     FOREIGN KEY (employer_id) REFERENCES users(user_id) ON DELETE CASCADE,
     INDEX idx_employer_jobs (employer_id, job_status),
     INDEX idx_location (location_region, location_province, location_city),
@@ -483,33 +488,33 @@ CREATE TABLE job_applications (
 CREATE TABLE worker_portfolio (
     portfolio_id INT PRIMARY KEY AUTO_INCREMENT,
     worker_id INT NOT NULL,
-    title VARCHAR(255) NOT NULL,
+    title VARCHAR(191) NOT NULL,
     description TEXT,
     work_type ENUM('project', 'job_site', 'certification', 'equipment_operation', 'construction', 'welding', 'craft', 'service', 'maintenance', 'installation', 'repair', 'assembly', 'manufacturing', 'transportation', 'agriculture', 'general_labor', 'other') NOT NULL DEFAULT 'project',
-    project_url VARCHAR(500),
-    image_path VARCHAR(255),
+    project_url VARCHAR(191),
+    image_path VARCHAR(191),
     site_photos JSON, -- Multiple photos for job sites, before/after, equipment operation
-    client_company VARCHAR(255), -- For contractor work
-    job_location VARCHAR(255), -- Physical location of work
+    client_company VARCHAR(191), -- For contractor work
+    job_location VARCHAR(191), -- Physical location of work
     work_duration VARCHAR(100), -- e.g., "3 months", "2 weeks", "1 year"
     completion_date DATE,
     tools_equipment JSON, -- List of tools/equipment used
     certifications JSON, -- Relevant certifications for this work
     work_category VARCHAR(100), -- e.g., "Residential Construction", "Industrial Welding", "Automotive Repair"
     team_size INT, -- Number of people worked with
-    supervisor_name VARCHAR(255), -- For reference
+    supervisor_name VARCHAR(191), -- For reference
     skills_used JSON,
     is_featured BOOLEAN DEFAULT FALSE,
     views_count INT DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    
+
     FOREIGN KEY (worker_id) REFERENCES users(user_id) ON DELETE CASCADE,
     INDEX idx_worker_portfolio (worker_id, is_featured),
     INDEX idx_featured_portfolio (is_featured, created_at),
     INDEX idx_work_type (work_type),
     INDEX idx_work_category (work_category),
-    INDEX idx_completion_date (completion_date DESC)
+    INDEX idx_completion_date (completion_date)
 );
 
 -- Job Ratings Table
@@ -566,13 +571,13 @@ CREATE TABLE messages (
     sender_id INT NOT NULL,
     receiver_id INT NOT NULL,
     job_id INT NULL,
-    subject VARCHAR(255),
+    subject VARCHAR(191),
     content TEXT NOT NULL,
     is_read BOOLEAN DEFAULT FALSE,
     is_deleted_by_sender BOOLEAN DEFAULT FALSE,
     is_deleted_by_receiver BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    
+
     FOREIGN KEY (sender_id) REFERENCES users(user_id) ON DELETE CASCADE,
     FOREIGN KEY (receiver_id) REFERENCES users(user_id) ON DELETE CASCADE,
     FOREIGN KEY (job_id) REFERENCES job_posts(job_id) ON DELETE SET NULL,
@@ -589,12 +594,12 @@ CREATE TABLE notifications (
     actor_id INT,
     target_id INT,
     target_type ENUM('job_post', 'application', 'message', 'rating') NOT NULL,
-    title VARCHAR(255) NOT NULL,
+    title VARCHAR(191) NOT NULL,
     message TEXT NOT NULL,
-    action_url VARCHAR(500),
+    action_url VARCHAR(191),
     is_read BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    
+
     FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
     FOREIGN KEY (actor_id) REFERENCES users(user_id) ON DELETE SET NULL,
     INDEX idx_user_notifications (user_id, is_read, created_at),
@@ -605,11 +610,11 @@ CREATE TABLE notifications (
 CREATE TABLE skill_posts (
     post_id INT PRIMARY KEY AUTO_INCREMENT,
     admin_id INT NOT NULL,
-    post_title VARCHAR(255) NOT NULL,
+    post_title VARCHAR(191) NOT NULL,
     post_content TEXT NOT NULL,
     post_type ENUM('certification', 'training', 'course', 'workshop') NOT NULL,
-    link_url VARCHAR(500),
-    thumbnail_image VARCHAR(255),
+    link_url VARCHAR(191),
+    thumbnail_image VARCHAR(191),
     category VARCHAR(100),
     tags TEXT,
     likes_count INT DEFAULT 0,
@@ -617,7 +622,7 @@ CREATE TABLE skill_posts (
     is_featured BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    
+
     FOREIGN KEY (admin_id) REFERENCES users(user_id) ON DELETE CASCADE,
     INDEX idx_admin_posts (admin_id, post_type),
     INDEX idx_post_type (post_type, is_featured),
@@ -665,11 +670,11 @@ CREATE TABLE transactions (
     currency VARCHAR(3) DEFAULT 'PHP',
     description TEXT,
     status ENUM('pending', 'completed', 'failed', 'cancelled') DEFAULT 'pending',
-    payment_method VARCHAR(255),
-    transaction_reference VARCHAR(255),
+    payment_method VARCHAR(191),
+    transaction_reference VARCHAR(191),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     completed_at TIMESTAMP NULL,
-    
+
     FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
     FOREIGN KEY (job_id) REFERENCES job_posts(job_id) ON DELETE SET NULL,
     FOREIGN KEY (contract_id) REFERENCES digital_contracts(contract_id) ON DELETE SET NULL,
@@ -701,11 +706,11 @@ CREATE TABLE trust_score_updates (
     old_score DECIMAL(3,2) NOT NULL,
     new_score DECIMAL(3,2) NOT NULL,
     score_change DECIMAL(3,2) NOT NULL,
-    update_reason VARCHAR(255) NOT NULL,
+    update_reason VARCHAR(191) NOT NULL,
     related_rating_id INT NULL,
     updated_by INT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    
+
     FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
     FOREIGN KEY (related_rating_id) REFERENCES job_ratings(rating_id) ON DELETE SET NULL,
     FOREIGN KEY (updated_by) REFERENCES users(user_id) ON DELETE SET NULL,
@@ -716,13 +721,13 @@ CREATE TABLE trust_score_updates (
 -- Auth Rate Limits Table
 CREATE TABLE auth_rate_limits (
     limit_id INT PRIMARY KEY AUTO_INCREMENT,
-    identifier VARCHAR(255) NOT NULL,
+    identifier VARCHAR(191) NOT NULL,
     limit_type ENUM('login', 'signup', 'password_reset', 'api_call') NOT NULL,
     attempt_count INT DEFAULT 1,
     blocked_until TIMESTAMP NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    
+
     UNIQUE KEY unique_rate_limit (identifier, limit_type),
     INDEX idx_blocked_until (blocked_until),
     INDEX idx_limit_type (limit_type, created_at)
@@ -758,13 +763,13 @@ CREATE TABLE unified_notifications (
     actor_id INT NOT NULL,
     target_id INT NULL,
     target_type ENUM('job_post', 'social_post', 'user_profile', 'message', 'application') NULL,
-    title VARCHAR(255) NOT NULL,
+    title VARCHAR(191) NOT NULL,
     message TEXT NOT NULL,
-    action_url VARCHAR(500) NULL,
+    action_url VARCHAR(191) NULL,
     is_read BOOLEAN DEFAULT FALSE,
     priority ENUM('low', 'medium', 'high', 'urgent') DEFAULT 'medium',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    
+
     FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
     FOREIGN KEY (actor_id) REFERENCES users(user_id) ON DELETE CASCADE,
     INDEX idx_user_notifications (user_id, is_read, created_at),
@@ -832,14 +837,14 @@ CREATE TABLE career_milestones (
     milestone_id INT PRIMARY KEY AUTO_INCREMENT,
     user_id INT NOT NULL,
     milestone_type ENUM('job_start', 'job_end', 'promotion', 'skill_acquired', 'certification_earned', 'portfolio_added', 'social_achievement') NOT NULL,
-    title VARCHAR(255) NOT NULL,
+    title VARCHAR(191) NOT NULL,
     description TEXT,
     related_job_id INT NULL,
     related_social_post_id INT NULL,
     milestone_date DATE NOT NULL,
     is_public BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    
+
     FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
     FOREIGN KEY (related_job_id) REFERENCES job_posts(job_id) ON DELETE SET NULL,
     FOREIGN KEY (related_social_post_id) REFERENCES social_posts(post_id) ON DELETE SET NULL,
@@ -882,7 +887,7 @@ CREATE TABLE trending_content (
     period_end TIMESTAMP NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     
-    INDEX idx_trending_content (content_type, trending_score DESC),
+    INDEX idx_trending_content (content_type, trending_score),
     INDEX idx_trending_period (trending_period, period_start),
     INDEX idx_content_trending (content_id, trending_period)
 );
@@ -914,8 +919,8 @@ CREATE TABLE unified_user_analytics (
     FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
     UNIQUE KEY unique_user_analytics (user_id, date),
     INDEX idx_user_analytics_date (user_id, date),
-    INDEX idx_engagement_metrics (total_engagement DESC),
-    INDEX idx_career_progress (career_progress_score DESC)
+    INDEX idx_engagement_metrics (total_engagement),
+    INDEX idx_career_progress (career_progress_score)
 );
 
 -- =================================================================
@@ -1024,16 +1029,18 @@ BEGIN
             JSON_OBJECT('post_type', NEW.post_type, 'visibility', NEW.visibility));
 END//
 
--- Trigger to update unified analytics
+-- Trigger to update unified analytics (only for actual new_message notifications)
 CREATE TRIGGER update_daily_analytics
 AFTER INSERT ON unified_notifications
 FOR EACH ROW
 BEGIN
-    INSERT INTO unified_user_analytics (user_id, date, messages_received)
-    VALUES (NEW.user_id, CURDATE(), 1)
-    ON DUPLICATE KEY UPDATE 
-        messages_received = messages_received + 1,
-        total_engagement = total_engagement + 1;
+    IF NEW.type = 'new_message' THEN
+        INSERT INTO unified_user_analytics (user_id, date, messages_received)
+        VALUES (NEW.user_id, CURDATE(), 1)
+        ON DUPLICATE KEY UPDATE 
+            messages_received = messages_received + 1,
+            total_engagement = total_engagement + 1;
+    END IF;
 END//
 
 DELIMITER ;
@@ -1082,39 +1089,42 @@ SELECT
 FROM users u
 LEFT JOIN social_profiles sp ON u.social_profile_id = sp.profile_id;
 
--- Trending Combined Content View
+-- NOTE: ORDER BY in a view is silently ignored by MySQL when querying the view.
+-- Sort in your application query instead: ORDER BY engagement_count DESC, created_at DESC
 CREATE VIEW trending_combined_content AS
-SELECT 
-    'job_post' as content_type,
-    job_id as content_id,
-    job_title as title,
-    created_at,
-    views_count,
-    (SELECT COUNT(*) FROM job_applications WHERE job_id = job_posts.job_id) as engagement_count,
-    (SELECT AVG(rating_stars) FROM job_ratings WHERE job_id = job_posts.job_id) as avg_rating,
-    pay_amount,
-    job_category,
-    'raketgo' as platform
-FROM job_posts 
-WHERE job_status = 'active'
+SELECT *
+FROM (
+    SELECT 
+        'job_post' as content_type,
+        job_id as content_id,
+        job_title as title,
+        created_at,
+        views_count,
+        (SELECT COUNT(*) FROM job_applications WHERE job_id = job_posts.job_id) as engagement_count,
+        (SELECT AVG(rating_stars) FROM job_ratings WHERE job_id = job_posts.job_id) as avg_rating,
+        pay_amount,
+        job_category,
+        'raketgo' as platform
+    FROM job_posts 
+    WHERE job_status = 'active'
 
-UNION ALL
+    UNION ALL
 
-SELECT 
-    'social_post' as content_type,
-    post_id as content_id,
-    title,
-    created_at,
-    views_count,
-    (likes_count + comments_count + shares_count) as engagement_count,
-    NULL as avg_rating,
-    NULL as pay_amount,
-    post_type as job_category,
-    'raketko' as platform
-FROM social_posts 
-WHERE visibility = 'public'
+    SELECT 
+        'social_post' as content_type,
+        post_id as content_id,
+        title,
+        created_at,
+        views_count,
+        (likes_count + comments_count + shares_count) as engagement_count,
+        NULL as avg_rating,
+        NULL as pay_amount,
+        post_type as job_category,
+        'raketko' as platform
+    FROM social_posts 
+    WHERE visibility = 'public'
+) t;
 
-ORDER BY engagement_count DESC, created_at DESC;
 
 -- =================================================================
 -- INITIAL DATA SETUP
@@ -1153,7 +1163,7 @@ INSERT INTO unified_skills (skill_name, skill_category, description, demand_leve
 -- Create composite indexes for better performance
 CREATE INDEX idx_user_platform_activity ON cross_platform_activities(user_id, platform, activity_type, created_at);
 CREATE INDEX idx_notification_priority ON unified_notifications(priority, is_read, created_at);
-CREATE INDEX idx_trending_combined ON trending_content(content_type, trending_score DESC, created_at);
+CREATE INDEX idx_trending_combined ON trending_content(content_type, trending_score, created_at);
 CREATE INDEX idx_unified_skills_search ON unified_skills(skill_name, skill_category, demand_level);
 
 -- =================================================================

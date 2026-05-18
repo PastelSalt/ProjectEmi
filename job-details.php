@@ -241,7 +241,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && AuthHelper::isLoggedIn() && AuthHelp
     }
 
 // Handle application approval/rejection (for employers)
-if ($_SERVER['REQUEST_METHOD'] == 'POST' && isLoggedIn() && getCurrentUserType() == 'employer') {
+if ($_SERVER['REQUEST_METHOD'] == 'POST' && AuthHelper::isLoggedIn() && AuthHelper::getCurrentUserType() == 'employer') {
     if (!verifyCsrfToken($_POST['csrf_token'] ?? '')) {
         $error = 'Invalid request. Please refresh the page and try again.';
     } else {

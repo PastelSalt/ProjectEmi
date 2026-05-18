@@ -13,10 +13,10 @@ if (!defined('DB_PORT')) {
     define('DB_PORT', (int)(getenv('RAKETGO_DB_PORT') ?: 3306));
 }
 if (!defined('DB_USER')) {
-    define('DB_USER', getenv('RAKETGO_DB_USER') ?: 'raketgo_user');
+    define('DB_USER', getenv('RAKETGO_DB_USER') ?: 'root');
 }
 if (!defined('DB_PASS')) {
-    define('DB_PASS', getenv('RAKETGO_DB_PASS') ?: 'raketgo_password123');
+    define('DB_PASS', getenv('RAKETGO_DB_PASS') ?: '');
 }
 if (!defined('DB_NAME')) {
     define('DB_NAME', getenv('RAKETGO_DB_NAME') ?: 'raketgo');
@@ -39,7 +39,18 @@ function bindParamsByReference($stmt, $types, &$params) {
 function getDBConnection() {
     try {
         mysqli_report(MYSQLI_REPORT_OFF);
-        $conn = new mysqli(DB_HOST, DB_USER, DB_PASS, DB_NAME, DB_PORT);
+        
+        // Initialize mysqli with driver options to handle authentication plugin
+        $driver_options = [
+            MYSQLI_OPT_CONNECT_TIMEOUT => 10,
+            MYSQLI_INIT_COMMAND => "SET SESSION sql_mode='TRADITIONAL'"
+        ];
+        
+        $conn = mysqli_init();
+        $conn->options(MYSQLI_OPT_CONNECT_TIMEOUT, 10);
+        
+        // Connect with default authentication plugin handling
+        $conn->real_connect(DB_HOST, DB_USER, DB_PASS, DB_NAME, DB_PORT);
         
         if ($conn->connect_error) {
             throw new Exception("Connection failed: " . $conn->connect_error);
