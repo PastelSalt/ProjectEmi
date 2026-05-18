@@ -464,24 +464,31 @@ CREATE TABLE job_applications (
     application_id INT PRIMARY KEY AUTO_INCREMENT,
     job_id INT NOT NULL,
     worker_id INT NOT NULL,
+    employer_id INT NOT NULL,
     application_status ENUM('pending', 'approved', 'rejected', 'withdrawn') DEFAULT 'pending',
     cover_letter TEXT,
+    resume_file VARCHAR(191),
     proposed_rate DECIMAL(10,2),
     availability_date DATE,
+    applied_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    reviewed_at TIMESTAMP NULL,
     worker_confirmed BOOLEAN DEFAULT FALSE,
     employer_confirmed BOOLEAN DEFAULT FALSE,
+    both_confirmed_at TIMESTAMP NULL,
+    rating_available_at TIMESTAMP NULL,
     work_start_time TIMESTAMP NULL,
     work_end_time TIMESTAMP NULL,
     payment_completed BOOLEAN DEFAULT FALSE,
-    application_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     
     FOREIGN KEY (job_id) REFERENCES job_posts(job_id) ON DELETE CASCADE,
     FOREIGN KEY (worker_id) REFERENCES users(user_id) ON DELETE CASCADE,
+    FOREIGN KEY (employer_id) REFERENCES users(user_id) ON DELETE CASCADE,
     UNIQUE KEY unique_application (job_id, worker_id),
     INDEX idx_job_applications (job_id, application_status),
     INDEX idx_worker_applications (worker_id, application_status),
-    INDEX idx_application_date (application_date)
+    INDEX idx_employer_applications (employer_id, application_status),
+    INDEX idx_applied_at (applied_at)
 );
 
 -- Worker Portfolio Table

@@ -103,7 +103,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                     }
                 }
 
-                if (move_uploaded_file($fileTmpPath, $destination)) {
+                if (saveUploadedImage($fileTmpPath, $destination, 800, 800)) {
                     $profile_picture = 'uploads/profiles/' . $uniqueFileName;
                     if (executeQuery($conn, "UPDATE users SET profile_picture = ? WHERE user_id = ?", [$profile_picture, $user_id], 'si')) {
                         $success = 'Profile picture updated successfully!';
@@ -121,7 +121,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 }
 
 $user = fetchOne($conn, "SELECT * FROM users WHERE user_id = ?", [$user_id], 'i');
-$skills = fetchAll($conn, "SELECT * FROM user_skills WHERE user_id = ? ORDER BY is_verified DESC, created_at DESC", [$user_id], 'i');
+$skills = fetchAll($conn, "SELECT * FROM user_skills WHERE user_id = ? ORDER BY verified DESC, created_at DESC", [$user_id], 'i');
 
 $applicationsSql = "SELECT ja.*, j.job_title, j.pay_amount, j.pay_type, j.job_type, u.full_name as employer_name
                     FROM job_applications ja
@@ -226,8 +226,8 @@ $stats = $statsResult ?: ['total_applications' => 0, 'approved_jobs' => 0, 'comp
                     <?php if (!empty($skills)): ?>
                         <div class="d-flex flex-wrap gap-1 mb-2">
                             <?php foreach ($skills as $skill): ?>
-                                <div class="tag <?php echo $skill['is_verified'] ? 'tag-pink' : ''; ?>" style="display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px;">
-                                    <?php if ($skill['is_verified']): ?><i class="fas fa-check-circle"></i><?php endif; ?>
+                                <div class="tag <?php echo $skill['verified'] ? 'tag-pink' : ''; ?>" style="display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px;">
+                                    <?php if ($skill['verified']): ?><i class="fas fa-check-circle"></i><?php endif; ?>
                                     <?php echo htmlspecialchars($skill['skill_name']); ?>
                                     <span class="text-xs">(<?php echo ucfirst($skill['proficiency_level']); ?>)</span>
                                     <form method="POST" style="display: inline; margin: 0;" onsubmit="return confirm('Remove?');">

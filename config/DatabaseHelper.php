@@ -94,8 +94,8 @@ class DatabaseHelper {
      * Add user skill
      */
     public function addUserSkill($userId, $skillName, $proficiency = 'intermediate') {
-        $sql = "INSERT INTO user_skills (user_id, skill_name, proficiency) VALUES (?, ?, ?)
-                ON DUPLICATE KEY UPDATE proficiency = ?";
+        $sql = "INSERT INTO user_skills (user_id, skill_name, proficiency_level) VALUES (?, ?, ?)
+            ON DUPLICATE KEY UPDATE proficiency_level = ?";
         return executeQuery($this->conn, $sql, [$userId, $skillName, $proficiency, $proficiency], 'isss');
     }
     
@@ -186,14 +186,14 @@ class DatabaseHelper {
     public function getUserConversations($userId) {
         $sql = "SELECT DISTINCT CASE WHEN sender_id = ? THEN receiver_id ELSE sender_id END as contact_id,
                        u.full_name, u.user_type, u.profile_picture,
-                       (SELECT message_content FROM messages
+                       (SELECT content FROM messages
                         WHERE (sender_id = ? AND receiver_id = contact_id) OR 
                               (sender_id = contact_id AND receiver_id = ?)
-                        ORDER BY sent_at DESC LIMIT 1) as last_message,
-                       (SELECT sent_at FROM messages
+                        ORDER BY created_at DESC LIMIT 1) as last_message,
+                       (SELECT created_at FROM messages
                         WHERE (sender_id = ? AND receiver_id = contact_id) OR 
                               (sender_id = contact_id AND receiver_id = ?)
-                        ORDER BY sent_at DESC LIMIT 1) as last_message_time,
+                        ORDER BY created_at DESC LIMIT 1) as last_message_time,
                        (SELECT COUNT(*) FROM messages
                         WHERE sender_id = contact_id AND receiver_id = ? AND is_read = 0) as unread_count
                 FROM messages m
@@ -214,7 +214,7 @@ class DatabaseHelper {
                 JOIN users sender ON m.sender_id = sender.user_id
                 JOIN users receiver ON m.receiver_id = receiver.user_id
                 WHERE (m.sender_id = ? AND m.receiver_id = ?) OR (m.sender_id = ? AND m.receiver_id = ?)
-                ORDER BY m.sent_at ASC";
+                ORDER BY m.created_at ASC";
         return fetchAll($this->conn, $sql, [$userId, $contactId, $contactId, $userId], 'iiii');
     }
     
@@ -222,7 +222,7 @@ class DatabaseHelper {
      * Send message
      */
     public function sendMessage($senderId, $receiverId, $content) {
-        $sql = "INSERT INTO messages (sender_id, receiver_id, message_content) VALUES (?, ?, ?)";
+        $sql = "INSERT INTO messages (sender_id, receiver_id, content) VALUES (?, ?, ?)";
         return executeQuery($this->conn, $sql, [$senderId, $receiverId, $content], 'iis');
     }
     
@@ -230,7 +230,7 @@ class DatabaseHelper {
      * Mark messages as read
      */
     public function markMessagesRead($senderId, $receiverId) {
-        $sql = "UPDATE messages SET is_read = 1, read_at = NOW() 
+        $sql = "UPDATE messages SET is_read = 1 
                 WHERE sender_id = ? AND receiver_id = ? AND is_read = 0";
         return executeQuery($this->conn, $sql, [$senderId, $receiverId], 'ii');
     }

@@ -788,6 +788,110 @@ function sanitizeMultilineInput($data) {
     return trim($data);
 }
 
+function isAnimatedGif($filePath) {
+    $contents = @file_get_contents($filePath, false, null, 0, 200000);
+    if ($contents === false) {
+        return false;
+    }
+
+    return preg_match_all('/\x00\x21\xF9\x04.{4}\x00\x2C/s', $contents) > 1;
+}
+
+function saveUploadedImage($tmpPath, $destination, $maxWidth = 1920, $maxHeight = 1920, $quality = 82) {
+    if (!extension_loaded('gd')) {
+        return move_uploaded_file($tmpPath, $destination);
+    }
+
+    $info = @getimagesize($tmpPath);
+    if ($info === false) {
+        return false;
+    }
+
+    $mime = $info['mime'] ?? '';
+    $src = null;
+
+    switch ($mime) {
+        case 'image/jpeg':
+            $src = @imagecreatefromjpeg($tmpPath);
+            break;
+        case 'image/png':
+            $src = @imagecreatefrompng($tmpPath);
+            break;
+        case 'image/webp':
+            if (function_exists('imagecreatefromwebp') && function_exists('imagewebp')) {
+                $src = @imagecreatefromwebp($tmpPath);
+            } else {
+                return move_uploaded_file($tmpPath, $destination);
+            }
+            break;
+        case 'image/gif':
+            if (isAnimatedGif($tmpPath)) {
+                return move_uploaded_file($tmpPath, $destination);
+            }
+            $src = @imagecreatefromgif($tmpPath);
+            break;
+        default:
+            return false;
+    }
+
+    if (!$src) {
+        return false;
+    }
+
+    if ($mime === 'image/jpeg' && function_exists('exif_read_data')) {
+        $exif = @exif_read_data($tmpPath);
+        $orientation = $exif['Orientation'] ?? 1;
+        if ($orientation === 3) {
+            $src = imagerotate($src, 180, 0);
+        } elseif ($orientation === 6) {
+            $src = imagerotate($src, -90, 0);
+        } elseif ($orientation === 8) {
+            $src = imagerotate($src, 90, 0);
+        }
+    }
+
+    $srcWidth = imagesx($src);
+    $srcHeight = imagesy($src);
+    $scale = min($maxWidth / $srcWidth, $maxHeight / $srcHeight, 1);
+    $newWidth = (int)round($srcWidth * $scale);
+    $newHeight = (int)round($srcHeight * $scale);
+
+    $dst = imagecreatetruecolor($newWidth, $newHeight);
+    if (in_array($mime, ['image/png', 'image/webp', 'image/gif'], true)) {
+        imagealphablending($dst, false);
+        imagesavealpha($dst, true);
+        $transparent = imagecolorallocatealpha($dst, 0, 0, 0, 127);
+        imagefilledrectangle($dst, 0, 0, $newWidth, $newHeight, $transparent);
+    }
+
+    imagecopyresampled($dst, $src, 0, 0, 0, 0, $newWidth, $newHeight, $srcWidth, $srcHeight);
+
+    $result = false;
+    switch ($mime) {
+        case 'image/jpeg':
+            $result = imagejpeg($dst, $destination, $quality);
+            break;
+        case 'image/png':
+            $result = imagepng($dst, $destination, 6);
+            break;
+        case 'image/webp':
+            $result = imagewebp($dst, $destination, $quality);
+            break;
+        case 'image/gif':
+            $result = imagegif($dst, $destination);
+            break;
+    }
+
+    imagedestroy($src);
+    imagedestroy($dst);
+
+    if (!$result) {
+        return move_uploaded_file($tmpPath, $destination);
+    }
+
+    return true;
+}
+
 function sanitizeInternalUrl($url, $fallback = 'index.php') {
     $url = trim((string)$url);
     if ($url === '') {

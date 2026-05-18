@@ -59,7 +59,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $uniqueFileName = uniqid('job_', true) . '_' . $user_id . '.' . $fileExtension;
             $destination = JOB_IMAGES_DIR . $uniqueFileName;
 
-            if (move_uploaded_file($fileTmpPath, $destination)) {
+            if (saveUploadedImage($fileTmpPath, $destination, 1600, 1200)) {
                 $job_image = 'uploads/jobs/' . $uniqueFileName;
             } else {
                 $error = 'Failed to upload job image. Please try again.';

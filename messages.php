@@ -7,7 +7,6 @@
 $page_title = 'Messages';
 require_once 'config/config.php';
 requireLogin();
-require_once 'includes/header.php';
 
 $conn = getDBConnection();
 $user_id = getCurrentUserId();
@@ -47,7 +46,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if (!$receiver) {
                 $send_error = 'Recipient is not available (inactive/deleted).';
             } else {
-                $insertSql = "INSERT INTO messages (sender_id, receiver_id, message_content) VALUES (?, ?, ?)";
+                $insertSql = "INSERT INTO messages (sender_id, receiver_id, content) VALUES (?, ?, ?)";
                 $ok = executeQuery($conn, $insertSql, [$user_id, $receiver_id, $message_content], 'iis');
 
                 if ($ok) {
@@ -60,13 +59,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $conn,
                         $notifSql,
                         [$receiver_id, $user_id, $receiver_id, "messages.php?user={$user_id}",],
-                        'iiii'
+                        'iiis'
                     );
 
                     $send_success = 'Message sent.';
                     redirect("messages.php?user={$receiver_id}");
                 } else {
-
+                    error_log("Message insert failed. SQL: $insertSql. Error: " . $conn->error);
                     $send_error = 'Failed to send message. Please try again.';
                 }
             }
@@ -98,12 +97,12 @@ if (!empty($search_query)) {
 $conversationsSql = "SELECT DISTINCT
                      CASE WHEN sender_id = ? THEN receiver_id ELSE sender_id END as contact_id,
                      u.full_name, u.user_type, u.profile_picture,
-                     (SELECT message_content FROM messages
+                     (SELECT content FROM messages
                       WHERE (sender_id = ? AND receiver_id = contact_id) OR (sender_id = contact_id AND receiver_id = ?)
-                      ORDER BY sent_at DESC LIMIT 1) as last_message,
-                     (SELECT sent_at FROM messages
+                      ORDER BY created_at DESC LIMIT 1) as last_message,
+                     (SELECT created_at FROM messages
                       WHERE (sender_id = ? AND receiver_id = contact_id) OR (sender_id = contact_id AND receiver_id = ?)
-                      ORDER BY sent_at DESC LIMIT 1) as last_message_time,
+                      ORDER BY created_at DESC LIMIT 1) as last_message_time,
                      (SELECT COUNT(*) FROM messages
                       WHERE sender_id = contact_id AND receiver_id = ? AND is_read = 0) as unread_count
                      FROM messages m
@@ -125,12 +124,14 @@ if ($conversation_user_id > 0) {
                         JOIN users sender ON m.sender_id = sender.user_id
                         JOIN users receiver ON m.receiver_id = receiver.user_id
                         WHERE (m.sender_id = ? AND m.receiver_id = ?) OR (m.sender_id = ? AND m.receiver_id = ?)
-                        ORDER BY m.sent_at ASC";
+                        ORDER BY m.created_at ASC";
         $messages = fetchAll($conn, $messagesSql, [$user_id, $conversation_user_id, $conversation_user_id, $user_id], 'iiii');
         
-        executeQuery($conn, "UPDATE messages SET is_read = 1, read_at = NOW() WHERE sender_id = ? AND receiver_id = ? AND is_read = 0", [$conversation_user_id, $user_id], 'ii');
+        executeQuery($conn, "UPDATE messages SET is_read = 1 WHERE sender_id = ? AND receiver_id = ? AND is_read = 0", [$conversation_user_id, $user_id], 'ii');
     }
 }
+
+require_once 'includes/header.php';
 ?>
 
 <div class="container">
@@ -289,9 +290,9 @@ if ($conversation_user_id > 0) {
                                     <div style="font-weight: 600; font-size: 0.72rem; margin-bottom: 2px; opacity: 0.8;">
                                         <?php echo $msg['sender_id'] == $user_id ? 'You' : htmlspecialchars($msg['sender_name']); ?>
                                     </div>
-                                    <div><?php echo nl2br(htmlspecialchars($msg['message_content'])); ?></div>
+                                    <div><?php echo nl2br(htmlspecialchars($msg['content'])); ?></div>
                                     <div style="font-size: 0.65rem; opacity: 0.6; margin-top: 3px; text-align: right;">
-                                        <?php echo timeAgo($msg['sent_at']); ?>
+                                        <?php echo timeAgo($msg['created_at']); ?>
                                     </div>
                                 </div>
                             </div>

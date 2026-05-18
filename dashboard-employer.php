@@ -89,7 +89,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                         }
                     }
 
-                    if (move_uploaded_file($fileTmpPath, $destination)) {
+                    if (saveUploadedImage($fileTmpPath, $destination, 800, 800)) {
                         $profile_picture = 'uploads/profiles/' . $uniqueFileName;
                         if (executeQuery($conn, "UPDATE users SET profile_picture = ? WHERE user_id = ?", [$profile_picture, $user_id], 'si')) {
                             $success = 'Profile picture updated successfully!';
@@ -182,7 +182,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                         }
                     }
 
-                    if (move_uploaded_file($fileTmpPath, $destination)) {
+                    if (saveUploadedImage($fileTmpPath, $destination, 800, 800)) {
                         $company_logo = 'uploads/company_logos/' . $uniqueFileName;
                         if (executeQuery($conn, "UPDATE users SET company_logo = ? WHERE user_id = ?", [$company_logo, $user_id], 'si')) {
                             $success = 'Company logo updated successfully!';

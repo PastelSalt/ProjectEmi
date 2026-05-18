@@ -51,6 +51,10 @@ function notifTagClass($type) {
         default => 'tag-gray'
     };
 }
+
+function getNotifType($notif) {
+    return $notif['notification_type'] ?? $notif['type'] ?? '';
+}
 ?>
 
 <div class="container">
@@ -97,14 +101,15 @@ function notifTagClass($type) {
                 </div>
                 <div class="panel-body">
                     <?php foreach ($unread as $notif): ?>
+                        <?php $notifType = getNotifType($notif); ?>
                         <div class="notification-item unread" style="display: flex; gap: 0.7rem; align-items: flex-start; padding: 0.7rem 0; border-bottom: 1px solid var(--border-light);">
                             <div style="width: 32px; height: 32px; border-radius: 50%; background: var(--primary-blue); color: #fff; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 0.8rem;">
-                                <i class="fas fa-<?php echo notifIcon($notif['notification_type']); ?>"></i>
+                                <i class="fas fa-<?php echo notifIcon($notifType); ?>"></i>
                             </div>
                             <div style="flex: 1; min-width: 0;">
                                 <div style="display: flex; justify-content: space-between; align-items: center;">
                                     <strong style="font-size: 0.85rem;"><?php echo htmlspecialchars($notif['title']); ?></strong>
-                                    <span class="tag <?php echo notifTagClass($notif['notification_type']); ?>" style="font-size: 0.6rem;"><?php echo str_replace('_', ' ', $notif['notification_type'] ?? ''); ?></span>
+                                    <span class="tag <?php echo notifTagClass($notifType); ?>" style="font-size: 0.6rem;"><?php echo str_replace('_', ' ', $notifType); ?></span>
                                 </div>
                                 <div style="font-size: 0.8rem; color: var(--text-dark); margin-top: 2px;"><?php echo htmlspecialchars($notif['message']); ?></div>
                                 <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 3px;">
@@ -149,9 +154,10 @@ function notifTagClass($type) {
                         <p class="text-center text-muted" style="padding: 1rem; font-size: 0.82rem;">No earlier notifications.</p>
                     <?php else: ?>
                         <?php foreach ($read as $notif): ?>
+                            <?php $notifType = getNotifType($notif); ?>
                             <div style="display: flex; gap: 0.7rem; align-items: flex-start; padding: 0.6rem 0; border-bottom: 1px solid var(--border-light); opacity: 0.7;">
                                 <div style="width: 28px; height: 28px; border-radius: 50%; background: var(--border-light); color: var(--text-muted); display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 0.7rem;">
-                                    <i class="fas fa-<?php echo notifIcon($notif['notification_type']); ?>"></i>
+                                    <i class="fas fa-<?php echo notifIcon($notifType); ?>"></i>
                                 </div>
                                 <div style="flex: 1; min-width: 0;">
                                     <strong style="font-size: 0.82rem;"><?php echo htmlspecialchars($notif['title']); ?></strong>

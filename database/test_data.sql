@@ -103,15 +103,15 @@ INSERT INTO job_posts (job_id, employer_id, job_title, job_description, job_requ
 -- JOB APPLICATIONS
 -- =================================================================
 
-INSERT INTO job_applications (job_id, worker_id, application_status, cover_letter, proposed_rate, availability_date) VALUES
-(1, 5, 'pending', 'I am very interested in this Senior PHP Developer position. With 5 years of experience in PHP and Laravel, I believe I have the skills you are looking for. I have worked on several large-scale projects and am confident in my ability to contribute to your team.', 45000.00, '2024-06-01'),
-(1, 10, 'pending', 'As a backend developer with strong PHP skills, I am excited about this opportunity. I have experience with Laravel and have built several RESTful APIs. I am available immediately and can start within 2 weeks.', 43000.00, '2024-05-20'),
-(2, 5, 'approved', 'I have strong experience with Vue.js and would love to join your frontend team. I have worked on several Vue.js projects and am confident in my ability to create great user interfaces.', 40000.00, '2024-06-01'),
-(2, 8, 'pending', 'As a mobile developer with frontend experience, I am interested in this Vue.js position. I have some experience with JavaScript and am eager to learn more about Vue.js.', 38000.00, '2024-06-15'),
-(3, 6, 'approved', 'I am excited about this UI/UX Designer position. I have 4 years of experience in UI design and am proficient in Figma. I have a strong portfolio and am passionate about creating great user experiences.', 35000.00, '2024-06-01'),
-(4, 7, 'pending', 'As a content writer with experience in SEO and social media, I am interested in this position. I have worked on various writing projects and can produce engaging content for different platforms.', 25000.00, '2024-06-01'),
-(5, 8, 'approved', 'I am perfect for this mobile app development project. I have 3 years of experience with React Native and have developed several cross-platform applications. I can start immediately.', 50000.00, '2024-05-15'),
-(6, 9, 'pending', 'As a digital marketing specialist with social media expertise, I am interested in this position. I have experience managing campaigns for various clients and can help grow your clients online presence.', 20000.00, '2024-06-01');
+INSERT INTO job_applications (job_id, worker_id, employer_id, application_status, cover_letter, proposed_rate, availability_date) VALUES
+(1, 5, 2, 'pending', 'I am very interested in this Senior PHP Developer position. With 5 years of experience in PHP and Laravel, I believe I have the skills you are looking for. I have worked on several large-scale projects and am confident in my ability to contribute to your team.', 45000.00, '2024-06-01'),
+(1, 10, 2, 'pending', 'As a backend developer with strong PHP skills, I am excited about this opportunity. I have experience with Laravel and have built several RESTful APIs. I am available immediately and can start within 2 weeks.', 43000.00, '2024-05-20'),
+(2, 5, 2, 'approved', 'I have strong experience with Vue.js and would love to join your frontend team. I have worked on several Vue.js projects and am confident in my ability to create great user interfaces.', 40000.00, '2024-06-01'),
+(2, 8, 2, 'pending', 'As a mobile developer with frontend experience, I am interested in this Vue.js position. I have some experience with JavaScript and am eager to learn more about Vue.js.', 38000.00, '2024-06-15'),
+(3, 6, 3, 'approved', 'I am excited about this UI/UX Designer position. I have 4 years of experience in UI design and am proficient in Figma. I have a strong portfolio and am passionate about creating great user experiences.', 35000.00, '2024-06-01'),
+(4, 7, 3, 'pending', 'As a content writer with experience in SEO and social media, I am interested in this position. I have worked on various writing projects and can produce engaging content for different platforms.', 25000.00, '2024-06-01'),
+(5, 8, 4, 'approved', 'I am perfect for this mobile app development project. I have 3 years of experience with React Native and have developed several cross-platform applications. I can start immediately.', 50000.00, '2024-05-15'),
+(6, 9, 4, 'pending', 'As a digital marketing specialist with social media expertise, I am interested in this position. I have experience managing campaigns for various clients and can help grow your clients online presence.', 20000.00, '2024-06-01');
 
 -- Update job posts application counts
 UPDATE job_posts SET applications_count = 2 WHERE job_id = 1;

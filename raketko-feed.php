@@ -62,6 +62,75 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $is_logged_in) {
                     }
                 }
                 break;
+
+            case 'add_comment':
+                $post_id = (int)($_POST['post_id'] ?? 0);
+                $comment_content = sanitizeMultilineInput($_POST['comment_content'] ?? '');
+
+                if ($post_id <= 0 || $comment_content === '') {
+                    $error = 'Comment cannot be empty.';
+                } else {
+                    if (strlen($comment_content) > 1000) {
+                        $comment_content = substr($comment_content, 0, 1000);
+                    }
+
+                    $mentions = extractMentions($comment_content);
+                    $result = executeQuery(
+                        $conn,
+                        "INSERT INTO social_post_comments (post_id, user_id, content, mentions) VALUES (?, ?, ?, ?)",
+                        [$post_id, $user_id, $comment_content, json_encode($mentions)],
+                        'iiss'
+                    );
+
+                    if ($result) {
+                        executeQuery($conn, "UPDATE social_posts SET comments_count = comments_count + 1 WHERE post_id = ?", [$post_id], 'i');
+                        createSocialNotification($post_id, 'comment', $user_id, $conn);
+                        $success = 'Comment posted.';
+                    } else {
+                        $error = 'Failed to post comment. Please try again.';
+                    }
+                }
+                break;
+
+            case 'share_post':
+                $post_id = (int)($_POST['post_id'] ?? 0);
+                $share_type = sanitizeInput($_POST['share_type'] ?? 'repost');
+                $share_comment = sanitizeMultilineInput($_POST['share_comment'] ?? '');
+
+                if ($post_id <= 0) {
+                    $error = 'Invalid post.';
+                } else {
+                    $existing = fetchOne(
+                        $conn,
+                        "SELECT share_id FROM social_post_shares WHERE post_id = ? AND user_id = ?",
+                        [$post_id, $user_id],
+                        'ii'
+                    );
+
+                    if ($existing) {
+                        $error = 'You already shared this post.';
+                    } else {
+                        if (strlen($share_comment) > 500) {
+                            $share_comment = substr($share_comment, 0, 500);
+                        }
+
+                        $result = executeQuery(
+                            $conn,
+                            "INSERT INTO social_post_shares (post_id, user_id, share_type, share_comment) VALUES (?, ?, ?, ?)",
+                            [$post_id, $user_id, $share_type, $share_comment],
+                            'iiss'
+                        );
+
+                        if ($result) {
+                            executeQuery($conn, "UPDATE social_posts SET shares_count = shares_count + 1 WHERE post_id = ?", [$post_id], 'i');
+                            createSocialNotification($post_id, 'share', $user_id, $conn);
+                            $success = 'Post shared.';
+                        } else {
+                            $error = 'Failed to share post. Please try again.';
+                        }
+                    }
+                }
+                break;
                 
             case 'like_post':
                 $post_id = (int)($_POST['post_id'] ?? 0);
@@ -69,6 +138,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $is_logged_in) {
                     $existing = fetchOne($conn, "SELECT * FROM social_post_likes WHERE post_id = ? AND user_id = ?", [$post_id, $user_id], 'ii');
                     if (!$existing) {
                         executeQuery($conn, "INSERT INTO social_post_likes (post_id, user_id) VALUES (?, ?)", [$post_id, $user_id], 'ii');
+                        executeQuery($conn, "UPDATE social_posts SET likes_count = likes_count + 1 WHERE post_id = ?", [$post_id], 'i');
                         // Create notification
                         createSocialNotification($post_id, 'like', $user_id, $conn);
                     }
@@ -79,6 +149,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $is_logged_in) {
                 $post_id = (int)($_POST['post_id'] ?? 0);
                 if ($post_id > 0) {
                     executeQuery($conn, "DELETE FROM social_post_likes WHERE post_id = ? AND user_id = ?", [$post_id, $user_id], 'ii');
+                    executeQuery($conn, "UPDATE social_posts SET likes_count = GREATEST(likes_count - 1, 0) WHERE post_id = ?", [$post_id], 'i');
                 }
                 break;
                 
@@ -143,9 +214,11 @@ $suggestedConnections = getSuggestedConnections($user_id, $conn);
 function getSocialFeed($user_id, $conn, $is_logged_in) {
     if ($is_logged_in) {
         $sql = "SELECT sp.*, u.full_name, u.profile_picture, u.user_type, 
-                CASE WHEN spl.user_id IS NOT NULL THEN TRUE ELSE FALSE END as user_liked,
-                (SELECT COUNT(*) FROM social_post_comments WHERE post_id = sp.post_id) as comment_count
-                FROM social_posts sp
+            CASE WHEN spl.user_id IS NOT NULL THEN TRUE ELSE FALSE END as user_liked,
+            (SELECT COUNT(*) FROM social_post_likes WHERE post_id = sp.post_id) as likes_count,
+            (SELECT COUNT(*) FROM social_post_comments WHERE post_id = sp.post_id) as comment_count,
+            (SELECT COUNT(*) FROM social_post_shares WHERE post_id = sp.post_id) as shares_count
+            FROM social_posts sp
                 JOIN users u ON sp.user_id = u.user_id
                 LEFT JOIN social_post_likes spl ON sp.post_id = spl.post_id AND spl.user_id = ?
                 WHERE sp.visibility = 'public' 
@@ -160,9 +233,11 @@ function getSocialFeed($user_id, $conn, $is_logged_in) {
     } else {
         // Public users only see public posts
         $sql = "SELECT sp.*, u.full_name, u.profile_picture, u.user_type, 
-                FALSE as user_liked,
-                (SELECT COUNT(*) FROM social_post_comments WHERE post_id = sp.post_id) as comment_count
-                FROM social_posts sp
+            FALSE as user_liked,
+            (SELECT COUNT(*) FROM social_post_likes WHERE post_id = sp.post_id) as likes_count,
+            (SELECT COUNT(*) FROM social_post_comments WHERE post_id = sp.post_id) as comment_count,
+            (SELECT COUNT(*) FROM social_post_shares WHERE post_id = sp.post_id) as shares_count
+            FROM social_posts sp
                 JOIN users u ON sp.user_id = u.user_id
                 WHERE sp.visibility = 'public'
                 ORDER BY sp.is_pinned DESC, sp.created_at DESC
@@ -214,9 +289,16 @@ function handleMediaUpload($files) {
             if (in_array($file_ext, $allowed_ext)) {
                 $filename = uniqid('media_', true) . '.' . $file_ext;
                 $filepath = $upload_dir . $filename;
-                
-                if (move_uploaded_file($files['tmp_name'][$key], $filepath)) {
-                    $media_urls[] = $filepath;
+
+                $isImage = in_array($file_ext, ['jpg', 'jpeg', 'png', 'gif', 'webp'], true);
+                if ($isImage) {
+                    if (saveUploadedImage($files['tmp_name'][$key], $filepath, 1600, 1600)) {
+                        $media_urls[] = $filepath;
+                    }
+                } else {
+                    if (move_uploaded_file($files['tmp_name'][$key], $filepath)) {
+                        $media_urls[] = $filepath;
+                    }
                 }
             }
         }
@@ -283,7 +365,6 @@ function createActivityFeed($user_id, $activity_type, $target_id, $conn) {
     }
 }
 
-closeDBConnection($conn);
 ?>
 
 <div class="container">
@@ -426,20 +507,20 @@ closeDBConnection($conn);
                                         </div>
                                     <?php endif; ?>
                                     <div style="flex: 1;">
+                                        <input type="text" name="title" class="form-control" placeholder="Add a short title" maxlength="120" required
+                                               style="margin-bottom: 0.5rem; border: 1px solid var(--border-light); border-radius: 10px; padding: 0.5rem 0.75rem; font-size: 0.95rem;">
                                         <textarea name="content" placeholder="Share your professional insights..." class="form-control" rows="3" style="border: none; background: transparent; padding: 0.5rem 0; resize: none; font-size: 1rem;" required></textarea>
+                                        <input type="file" id="postMedia" name="media[]" accept="image/*,video/mp4,video/quicktime" multiple style="display: none;">
+                                        <div id="postMediaPreview" style="display: none; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.5rem;"></div>
                                     </div>
                                 </div>
                                 
                                 <div style="display: flex; align-items: center; justify-content: space-between; padding: 0.5rem 0; border-top: 1px solid var(--border-light);">
                                     <div style="display: flex; gap: 1rem;">
-                                        <button type="button" class="post-action-btn" style="background: none; border: none; color: var(--sana-red); cursor: pointer; padding: 0.5rem; border-radius: 8px; transition: all 0.2s ease;">
+                                        <button type="button" class="post-action-btn" onclick="document.getElementById('postMedia').click();" aria-label="Add photos or video"
+                                                style="background: none; border: none; color: var(--sana-red); cursor: pointer; padding: 0.5rem; border-radius: 8px; transition: all 0.2s ease; display: flex; align-items: center; gap: 0.4rem;">
                                             <i class="fas fa-image"></i>
-                                        </button>
-                                        <button type="button" class="post-action-btn" style="background: none; border: none; color: var(--sana-red); cursor: pointer; padding: 0.5rem; border-radius: 8px; transition: all 0.2s ease;">
-                                            <i class="fas fa-chart-line"></i>
-                                        </button>
-                                        <button type="button" class="post-action-btn" style="background: none; border: none; color: var(--sana-red); cursor: pointer; padding: 0.5rem; border-radius: 8px; transition: all 0.2s ease;">
-                                            <i class="fas fa-smile"></i>
+                                            <span style="font-size: 0.8rem;">Media</span>
                                         </button>
                                     </div>
                                     <div style="display: flex; gap: 0.5rem; align-items: center;">
@@ -582,10 +663,15 @@ closeDBConnection($conn);
                                             <span style="font-size: 0.85rem;"><?php echo $post['comment_count']; ?></span>
                                         </button>
                                         
-                                        <button class="post-action-btn" style="display: flex; align-items: center; gap: 0.25rem; padding: 0.5rem 1rem; background: none; border: none; color: var(--text-muted); cursor: pointer; border-radius: 20px; transition: all 0.2s ease;">
-                                            <i class="fas fa-share"></i>
-                                            <span style="font-size: 0.85rem;"><?php echo $post['shares_count']; ?></span>
-                                        </button>
+                                        <form method="POST" style="display: inline;">
+                                            <?php echo csrfField(); ?>
+                                            <input type="hidden" name="action" value="share_post">
+                                            <input type="hidden" name="post_id" value="<?php echo $post['post_id']; ?>">
+                                            <button type="submit" class="post-action-btn" style="display: flex; align-items: center; gap: 0.25rem; padding: 0.5rem 1rem; background: none; border: none; color: var(--text-muted); cursor: pointer; border-radius: 20px; transition: all 0.2s ease;">
+                                                <i class="fas fa-share"></i>
+                                                <span style="font-size: 0.85rem;"><?php echo $post['shares_count']; ?></span>
+                                            </button>
+                                        </form>
                                     <?php else: ?>
                                         <a href="login.php" class="post-action-btn" style="display: flex; align-items: center; gap: 0.25rem; padding: 0.5rem 1rem; background: none; border: none; color: var(--text-muted); text-decoration: none; border-radius: 20px; transition: all 0.2s ease;">
                                             <i class="fas fa-heart"></i>
@@ -611,6 +697,67 @@ closeDBConnection($conn);
                                         </a>
                                     <?php endif; ?>
                                 </div>
+                            </div>
+
+                            <?php
+                            $comments = fetchAll(
+                                $conn,
+                                "SELECT spc.*, u.full_name, u.profile_picture
+                                 FROM social_post_comments spc
+                                 JOIN users u ON spc.user_id = u.user_id
+                                 WHERE spc.post_id = ?
+                                 ORDER BY spc.created_at DESC
+                                 LIMIT 5",
+                                [$post['post_id']],
+                                'i'
+                            );
+                            ?>
+                            <div id="comments-<?php echo $post['post_id']; ?>" style="display: none; margin-top: 0.75rem; border-top: 1px solid var(--border-light); padding-top: 0.75rem;">
+                                <?php if ($is_logged_in): ?>
+                                    <form method="POST" style="display: flex; gap: 0.5rem; align-items: flex-start; margin-bottom: 0.75rem;">
+                                        <?php echo csrfField(); ?>
+                                        <input type="hidden" name="action" value="add_comment">
+                                        <input type="hidden" name="post_id" value="<?php echo $post['post_id']; ?>">
+                                        <textarea name="comment_content" class="form-control" rows="2" placeholder="Write a comment..." required
+                                                  style="flex: 1; border-radius: 10px; font-size: 0.85rem; padding: 0.5rem;"></textarea>
+                                        <button type="submit" class="btn btn-primary btn-small" style="align-self: flex-end;">
+                                            Comment
+                                        </button>
+                                    </form>
+                                <?php else: ?>
+                                    <a href="login.php" class="btn btn-outline btn-small" style="text-decoration: none;">
+                                        Sign in to comment
+                                    </a>
+                                <?php endif; ?>
+
+                                <?php if (empty($comments)): ?>
+                                    <div class="text-muted" style="font-size: 0.8rem;">No comments yet.</div>
+                                <?php else: ?>
+                                    <?php foreach ($comments as $comment): ?>
+                                        <div style="display: flex; gap: 0.5rem; margin-bottom: 0.6rem;">
+                                            <?php if (!empty($comment['profile_picture'])): ?>
+                                                <img src="<?php echo htmlspecialchars($comment['profile_picture']); ?>" alt="" style="width: 28px; height: 28px; border-radius: 50%; object-fit: cover;">
+                                            <?php else: ?>
+                                                <div style="width: 28px; height: 28px; border-radius: 50%; background: var(--sana-red); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: 700;">
+                                                    <?php echo mb_strtoupper(mb_substr($comment['full_name'], 0, 1, 'UTF-8'), 'UTF-8'); ?>
+                                                </div>
+                                            <?php endif; ?>
+                                            <div style="flex: 1; min-width: 0;">
+                                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                                    <strong style="font-size: 0.8rem; color: var(--text-dark);">
+                                                        <?php echo htmlspecialchars($comment['full_name']); ?>
+                                                    </strong>
+                                                    <span style="font-size: 0.7rem; color: var(--text-muted);">
+                                                        <?php echo timeAgo($comment['created_at']); ?>
+                                                    </span>
+                                                </div>
+                                                <div style="font-size: 0.85rem; color: var(--text-dark);">
+                                                    <?php echo nl2br(htmlspecialchars($comment['content'])); ?>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    <?php endforeach; ?>
+                                <?php endif; ?>
                             </div>
                         </div>
                     </div>
@@ -711,8 +858,62 @@ function togglePostForm() {
 
 function toggleComments(postId) {
     const commentsSection = document.getElementById('comments-' + postId);
+    if (!commentsSection) {
+        return;
+    }
     commentsSection.style.display = commentsSection.style.display === 'none' ? 'block' : 'none';
 }
+
+document.addEventListener('DOMContentLoaded', function() {
+    const mediaInput = document.getElementById('postMedia');
+    const preview = document.getElementById('postMediaPreview');
+
+    if (!mediaInput || !preview) {
+        return;
+    }
+
+    mediaInput.addEventListener('change', function() {
+        preview.innerHTML = '';
+
+        if (!mediaInput.files || mediaInput.files.length === 0) {
+            preview.style.display = 'none';
+            return;
+        }
+
+        preview.style.display = 'flex';
+
+        Array.from(mediaInput.files).forEach(function(file) {
+            if (file.type && file.type.indexOf('image/') === 0) {
+                const img = document.createElement('img');
+                img.alt = 'Selected media';
+                img.style.width = '88px';
+                img.style.height = '88px';
+                img.style.objectFit = 'cover';
+                img.style.borderRadius = '10px';
+                img.style.border = '1px solid var(--border-light)';
+
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    img.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+
+                preview.appendChild(img);
+            } else {
+                const badge = document.createElement('div');
+                badge.textContent = file.name;
+                badge.style.fontSize = '0.75rem';
+                badge.style.padding = '0.4rem 0.5rem';
+                badge.style.border = '1px solid var(--border-light)';
+                badge.style.borderRadius = '10px';
+                preview.appendChild(badge);
+            }
+        });
+    });
+});
 </script>
 
-<?php require_once 'includes/footer.php'; ?>
+<?php
+closeDBConnection($conn);
+require_once 'includes/footer.php';
+?>

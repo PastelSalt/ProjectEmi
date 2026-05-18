@@ -133,7 +133,10 @@ function handleProfilePhotoUpload($file, $type) {
             $filename = uniqid($type . '_', true) . '.' . $file_ext;
             $filepath = $upload_dir . $filename;
             
-            if (move_uploaded_file($file['tmp_name'], $filepath)) {
+            $maxWidth = ($type === 'covers') ? 2400 : 800;
+            $maxHeight = ($type === 'covers') ? 1200 : 800;
+
+            if (saveUploadedImage($file['tmp_name'], $filepath, $maxWidth, $maxHeight)) {
                 return $filepath;
             }
         }

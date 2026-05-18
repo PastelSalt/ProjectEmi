@@ -70,7 +70,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                         $uniqueFileName = uniqid('portfolio_', true) . '_' . $worker_id . '.' . $fileExtension;
                         $destination = PORTFOLIO_IMAGES_DIR . $uniqueFileName;
 
-                        if (move_uploaded_file($fileTmpPath, $destination)) {
+                        if (saveUploadedImage($fileTmpPath, $destination, 1600, 1600)) {
                             $image_path = 'uploads/portfolio/' . $uniqueFileName;
                         } else {
                             $error = 'Failed to upload image. Please try again.';
@@ -166,7 +166,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                         $uniqueFileName = uniqid('portfolio_', true) . '_' . $worker_id . '.' . $fileExtension;
                         $destination = PORTFOLIO_IMAGES_DIR . $uniqueFileName;
 
-                        if (move_uploaded_file($fileTmpPath, $destination)) {
+                        if (saveUploadedImage($fileTmpPath, $destination, 1600, 1600)) {
                             $image_path = 'uploads/portfolio/' . $uniqueFileName;
                             $updateImage = true;
                         } else {

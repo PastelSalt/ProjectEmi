@@ -13,6 +13,8 @@ require_once 'config/AuthHelper.php';
 $conn = getDBConnection();
 $db = new DatabaseHelper($conn);
 $handler = new ErrorHandler();
+$error = '';
+$success = '';
 
 $job_id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 
@@ -157,29 +159,36 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && AuthHelper::isLoggedIn() && AuthHelp
 
             // Handle resume file upload
             $resume_file = null;
-            if (isset($_FILES['resume_file']) && $_FILES['resume_file']['error'] === UPLOAD_ERR_OK) {
-                $file = $_FILES['resume_file'];
-                $fileSize = $file['size'];
-                $fileTmpPath = $file['tmp_name'];
-                $fileName = $file['name'];
-                $fileType = mime_content_type($fileTmpPath);
-
-                // Validate file type (PDF only)
-                $allowedMimeTypes = ['application/pdf'];
-                if (!in_array($fileType, $allowedMimeTypes, true)) {
-                    $error = 'Invalid file type. Please upload a PDF file.';
-                } elseif ($fileSize > 5 * 1024 * 1024) { // 5MB limit
-                    $error = 'File size exceeds 5MB limit.';
+            if (empty($error) && isset($_FILES['resume_file']) && $_FILES['resume_file']['error'] !== UPLOAD_ERR_NO_FILE) {
+                if ($_FILES['resume_file']['error'] !== UPLOAD_ERR_OK) {
+                    $error = 'Resume upload failed. Please try again.';
+                    if (APP_DEBUG) {
+                        $error .= ' (Upload error: ' . (int)$_FILES['resume_file']['error'] . ')';
+                    }
                 } else {
-                    // Generate unique filename
-                    $fileExtension = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
-                    $uniqueFileName = uniqid('resume_', true) . '_' . $user_id . '_' . $job_id . '.' . $fileExtension;
-                    $destination = RESUMES_DIR . $uniqueFileName;
+                    $file = $_FILES['resume_file'];
+                    $fileSize = $file['size'];
+                    $fileTmpPath = $file['tmp_name'];
+                    $fileName = $file['name'];
+                    $fileType = mime_content_type($fileTmpPath);
 
-                    if (move_uploaded_file($fileTmpPath, $destination)) {
-                        $resume_file = 'uploads/resumes/' . $uniqueFileName;
+                    // Validate file type (PDF only)
+                    $allowedMimeTypes = ['application/pdf'];
+                    if (!in_array($fileType, $allowedMimeTypes, true)) {
+                        $error = 'Invalid file type. Please upload a PDF file.';
+                    } elseif ($fileSize > 5 * 1024 * 1024) { // 5MB limit
+                        $error = 'File size exceeds 5MB limit.';
                     } else {
-                        $error = 'Failed to upload resume file. Please try again.';
+                        // Generate unique filename
+                        $fileExtension = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
+                        $uniqueFileName = uniqid('resume_', true) . '_' . $user_id . '_' . $job_id . '.' . $fileExtension;
+                        $destination = RESUMES_DIR . $uniqueFileName;
+
+                        if (move_uploaded_file($fileTmpPath, $destination)) {
+                            $resume_file = 'uploads/resumes/' . $uniqueFileName;
+                        } else {
+                            $error = 'Failed to upload resume file. Please try again.';
+                        }
                     }
                 }
             }
@@ -215,6 +224,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && AuthHelper::isLoggedIn() && AuthHelp
                                 } else {
                                     rollbackTransaction($conn);
                                     $error = 'Failed to resubmit application. Please try again.';
+                                    if (APP_DEBUG && $conn->error) {
+                                        $error .= ' (DB: ' . $conn->error . ')';
+                                    }
                                 }
                             } else {
                                 $insertSql = "INSERT INTO job_applications (job_id, worker_id, employer_id, cover_letter, resume_file) VALUES (?, ?, ?, ?, ?)";
@@ -227,6 +239,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && AuthHelper::isLoggedIn() && AuthHelp
                                 } else {
                                     rollbackTransaction($conn);
                                     $error = 'Failed to submit application. Please try again.';
+                                    if (APP_DEBUG && $conn->error) {
+                                        $error .= ' (DB: ' . $conn->error . ')';
+                                    }
                                 }
                             }
                         } catch (Exception $e) {
@@ -383,6 +398,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && AuthHelper::isLoggedIn() && AuthHelp
             }
         }
     }
+}
+
+if (!empty($error)) {
+    $handler->addError($error);
+}
+if (!empty($success)) {
+    $handler->addSuccess($success);
 }
 
 // Job details already fetched above

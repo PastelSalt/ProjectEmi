@@ -34,10 +34,10 @@ if (!$worker) {
 // Get worker skills
 $skills = fetchAll(
     $conn,
-    "SELECT skill_name, proficiency_level, is_verified, verification_document, verified_at
+    "SELECT skill_name, proficiency_level, verified, verification_source
      FROM user_skills 
      WHERE user_id = ? 
-     ORDER BY is_verified DESC, proficiency_level DESC, skill_name ASC",
+     ORDER BY verified DESC, proficiency_level DESC, skill_name ASC",
     [$worker_id],
     'i'
 );
@@ -220,9 +220,9 @@ closeDBConnection($conn);
                 <div class="panel-body">
                     <div class="tech-tags">
                         <?php foreach ($skills as $skill): ?>
-                            <span class="tag <?php echo $skill['is_verified'] ? 'tag-green' : 'tag-pink'; ?>" style="position: relative;">
+                            <span class="tag <?php echo $skill['verified'] ? 'tag-green' : 'tag-pink'; ?>" style="position: relative;">
                                 <?php echo htmlspecialchars($skill['skill_name']); ?>
-                                <?php if ($skill['is_verified']): ?>
+                                <?php if ($skill['verified']): ?>
                                     <i class="fas fa-check-circle" style="color: var(--green-badge); margin-left: 4px; font-size: 0.7rem;" title="Verified Skill"></i>
                                 <?php endif; ?>
                                 <span class="text-muted" style="font-size: 0.6rem; margin-left: 4px;">

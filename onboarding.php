@@ -51,7 +51,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $uniqueFileName = uniqid('profile_', true) . '_' . $user_id . '.' . $fileExtension;
                     $destination = PROFILE_PICS_DIR . $uniqueFileName;
                     
-                    if (move_uploaded_file($file['tmp_name'], $destination)) {
+                    if (saveUploadedImage($file['tmp_name'], $destination, 800, 800)) {
                         $profile_picture = 'uploads/profiles/' . $uniqueFileName;
                     }
                 }
