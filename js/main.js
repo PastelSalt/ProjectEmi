@@ -225,15 +225,17 @@ function checkNewNotifications() {
 }
 
 function updateNotificationBadge(count) {
-    var badge = document.querySelector('.nav-menu a[href="notifications.php"] .badge');
-    if (!badge) return;
+    // Current header markup uses a dot indicator (<span class="notif-dot">) rather than a numeric .badge.
+    var dot = document.querySelector('.nav-menu a[href="notifications.php"] .notif-dot');
+    if (!dot) return;
+
     if (count > 0) {
-        badge.textContent = count;
-        badge.style.display = 'inline';
+        dot.style.display = 'inline';
     } else {
-        badge.style.display = 'none';
+        dot.style.display = 'none';
     }
 }
+
 
 // Messages
 function initMessages() {

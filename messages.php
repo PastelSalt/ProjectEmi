@@ -18,32 +18,67 @@ if ($conversation_user_id === $user_id) {
 }
 
 // Handle sending message
+$send_error = '';
+$send_success = '';
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $isValidCsrf = verifyCsrfToken($_POST['csrf_token'] ?? '');
     if (!$isValidCsrf) {
+        $send_error = 'Invalid request (CSRF).';
         $conversation_user_id = 0;
     }
 
     $receiver_id = (int)($_POST['receiver_id'] ?? 0);
     $message_content = sanitizeMultilineInput($_POST['message_content'] ?? '');
-    
-    if ($isValidCsrf && !empty($message_content) && $receiver_id > 0 && $receiver_id !== $user_id) {
-        if (strlen($message_content) > 2000) {
+
+    if (empty($send_error)) {
+        if (empty($message_content)) {
+            $send_error = 'Message is empty.';
+        } elseif ($receiver_id <= 0) {
+            $send_error = 'Invalid recipient.';
+        } elseif ($receiver_id === $user_id) {
+            $send_error = 'You cannot message yourself.';
+        } elseif (strlen($message_content) > 2000) {
             $message_content = substr($message_content, 0, 2000);
         }
 
-        $receiver = fetchOne($conn, "SELECT user_id FROM users WHERE user_id = ? AND account_status = 'active'", [$receiver_id], 'i');
-        if ($receiver) {
-            $insertSql = "INSERT INTO messages (sender_id, receiver_id, message_content) VALUES (?, ?, ?)";
-            if (executeQuery($conn, $insertSql, [$user_id, $receiver_id, $message_content], 'iis')) {
-                $notifSql = "INSERT INTO notifications (user_id, notification_type, title, message, related_id, related_type, action_url)
-                            VALUES (?, 'new_message', 'New Message', 'You have a new message', ?, 'message', ?)";
-                executeQuery($conn, $notifSql, [$receiver_id, $user_id, "messages.php?user={$user_id}"], 'iis');
-                $conversation_user_id = $receiver_id;
+        if (empty($send_error)) {
+            $receiver = fetchOne($conn, "SELECT user_id FROM users WHERE user_id = ? AND account_status = 'active'", [$receiver_id], 'i');
+            if (!$receiver) {
+                $send_error = 'Recipient is not available (inactive/deleted).';
+            } else {
+                $insertSql = "INSERT INTO messages (sender_id, receiver_id, message_content) VALUES (?, ?, ?)";
+                $ok = executeQuery($conn, $insertSql, [$user_id, $receiver_id, $message_content], 'iis');
+
+                if ($ok) {
+                    // Notifications table schema is: user_id, type, actor_id, target_id, target_type, title, message, action_url, is_read
+                    $notifSql = "INSERT INTO notifications (user_id, type, actor_id, target_id, target_type, title, message, action_url, is_read)
+                                VALUES (?, 'new_message', ?, ?, 'message', 'New Message', 'You have a new message', ?, 0)";
+
+                    // Best-effort notifications; don't block message if notifications fail
+                    $notifOk = executeQuery(
+                        $conn,
+                        $notifSql,
+                        [$receiver_id, $user_id, $receiver_id, "messages.php?user={$user_id}",],
+                        'iiii'
+                    );
+
+                    $send_success = 'Message sent.';
+                    redirect("messages.php?user={$receiver_id}");
+                } else {
+
+                    $send_error = 'Failed to send message. Please try again.';
+                }
             }
         }
     }
+
+    // Keep chat open on error
+    if (!empty($receiver_id) && $receiver_id !== $user_id) {
+        $conversation_user_id = $receiver_id;
+    }
 }
+
 
 // Handle user search
 $search_query = isset($_GET['search']) ? sanitizeInput($_GET['search']) : '';
@@ -109,7 +144,17 @@ if ($conversation_user_id > 0) {
             <i class="fas fa-user-plus"></i> New Message
         </button>
     </div>
-    <div class="messages-layout">
+                <div class="messages-layout">
+        <?php if (!empty($send_error)): ?>
+            <div class="alert alert-danger" style="margin-bottom: 16px;">
+                <i class="fas fa-exclamation-circle"></i> <?php echo htmlspecialchars($send_error); ?>
+            </div>
+        <?php elseif (!empty($send_success)): ?>
+            <div class="alert alert-success" style="margin-bottom: 16px;">
+                <i class="fas fa-check-circle"></i> <?php echo htmlspecialchars($send_success); ?>
+            </div>
+        <?php endif; ?>
+
         <!-- Conversations List -->
         <div class="panel messages-conversations-panel">
             <!-- Search Users -->
